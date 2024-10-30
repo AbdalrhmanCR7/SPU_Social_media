@@ -25,9 +25,8 @@ final class SuccessState extends LoginState {
 @override
 List<Object?> get props => [];
 }
-final class LogOutState extends Equatable {
+
+final class UserState extends LoginState {
 @override
 List<Object?> get props => [];
-
 }
-

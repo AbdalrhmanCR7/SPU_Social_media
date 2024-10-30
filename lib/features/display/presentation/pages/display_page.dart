@@ -55,7 +55,6 @@ class DisPlayPage extends StatelessWidget {
       ),
     );
   }
-
   Widget buildPostItem(context) => Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         elevation: 5.0,

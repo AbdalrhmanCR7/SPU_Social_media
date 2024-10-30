@@ -4,7 +4,7 @@ class AuthTextFormField extends StatelessWidget {
   final String labelText;
   final bool obscureText;
   final TextEditingController controller;
-  //final Function(String? value) validator;
+  final Function(String? value) validator;
   final IconData? prefixIcon;
   final IconData? suffixIcon;
   final Function()? suffixIconAction;
@@ -14,14 +14,14 @@ class AuthTextFormField extends StatelessWidget {
   const AuthTextFormField(
       {super.key,
         required this.controller,
-       // required this.validator,
+        required this.validator,
         required this.labelText,
         this.obscureText = false,
         this.prefixIcon,
         this.suffixIcon,
         this.suffixIconAction,
         this.horizontalPadding = 10,
-        this.verticalPadding = 10, required Function(dynamic fullName) validator});
+        this.verticalPadding = 10, required Function(dynamic fullName)});
 
   @override
   Widget build(BuildContext context) {
@@ -85,9 +85,9 @@ class AuthTextFormField extends StatelessWidget {
         onTapOutside: (_) {
           FocusManager.instance.primaryFocus?.unfocus();
         },
-       // validator: (String? v) {
-       //   return validator(v);
-      //  },
+        validator: (String? v) {
+          return validator(v);
+        },
       ),
     );
   }

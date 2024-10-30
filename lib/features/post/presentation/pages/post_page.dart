@@ -9,6 +9,7 @@ class AddPostPage extends StatefulWidget {
 
 class _AddPostPageState extends State<AddPostPage> {
   final TextEditingController _textController = TextEditingController();
+  String? _imageUrl = 'https://via.placeholder.com/150';  // رابط صورة افتراضي
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +26,13 @@ class _AddPostPageState extends State<AddPostPage> {
                   radius: 20,
                 ),
                 SizedBox(width: 10),
-                Text(" User name"),
+                Text("User name"),
               ],
             ),
             TextField(
               controller: _textController,
               decoration: const InputDecoration(
-                hintText: "Type somthing",
+                hintText: "Type something",
                 border: InputBorder.none,
               ),
               maxLines: null,
@@ -43,11 +44,15 @@ class _AddPostPageState extends State<AddPostPage> {
                     IconButton(
                       icon: const Icon(Icons.image, color: Colors.blue),
                       onPressed: () {
-                        // إضافة صورة
+                        setState(() {
+                          _imageUrl = 'https://via.placeholder.com/150'; // تغيير رابط الصورة عند الضغط
+                        });
                       },
                     ),
                     TextButton(
-                        onPressed: () {}, child: const Text("Add photo")),
+                      onPressed: () {},
+                      child: const Text("Add photo"),
+                    ),
                   ],
                 ),
                 Row(
@@ -56,24 +61,28 @@ class _AddPostPageState extends State<AddPostPage> {
                       icon: const Icon(Icons.video_call_rounded,
                           color: Colors.green),
                       onPressed: () {
-                        // إضافة صورة
+                        // إضافة فيديو
                       },
                     ),
                     TextButton(
-                        onPressed: () {}, child: const Text("Add video")),
+                      onPressed: () {},
+                      child: const Text("Add video"),
+                    ),
                   ],
                 ),
                 Row(
                   children: [
                     IconButton(
                       icon:
-                          const Icon(Icons.camera_alt, color: Colors.redAccent),
+                      const Icon(Icons.camera_alt, color: Colors.redAccent),
                       onPressed: () {
-                        // إضافة صورة
+                        // التقاط صورة
                       },
                     ),
                     TextButton(
-                        onPressed: () {}, child: const Text("Take a photo")),
+                      onPressed: () {},
+                      child: const Text("Take a photo"),
+                    ),
                   ],
                 ),
                 Row(
@@ -81,14 +90,33 @@ class _AddPostPageState extends State<AddPostPage> {
                     IconButton(
                       icon: const Icon(Icons.person_sharp, color: Colors.black),
                       onPressed: () {
-                        // إضافة صورة
+                        // ذكر شخص
                       },
                     ),
-                    TextButton(onPressed: () {}, child: const Text("Mention")),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text("Mention"),
+                    ),
                   ],
                 ),
               ],
             ),
+
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only( top: 30),
+
+                  child: Image(
+
+                    image: AssetImage(
+                        'assets/images/Slogo.jpg'
+                    ),
+                   // fit: BoxFit.fill,
+                    fit: BoxFit.contain,
+
+                  )
+                ),
+              ),
           ],
         ),
       ),

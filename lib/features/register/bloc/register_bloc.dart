@@ -2,9 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
 import '../data/repositories/register_repository.dart';
-
 part 'register_event.dart';
 
 part 'register_state.dart';
@@ -12,7 +10,7 @@ part 'register_state.dart';
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final RegisterRepository _registerRepository = RegisterRepository();
 
@@ -20,7 +18,10 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     on<Register>((event, emit) async {
       emit(LoadingState());
       final result = await _registerRepository.register(
-          email: emailController.text, password: passwordController.text);
+        email: emailController.text,
+        password: passwordController.text,
+        userName: usernameController.text,
+      );
       result.fold((failure) {
         Fluttertoast.showToast(
           msg: failure.errorMessage,

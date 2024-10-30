@@ -10,9 +10,14 @@ class RegisterRepository {
   Future<Either<Failure, void>> register({
     required String email,
     required String password,
+    required String userName,
   }) async {
     try {
-      await _registerDataSource.register(email: email, password: password);
+      await _registerDataSource.register(
+        email: email,
+        password: password,
+        userName: userName,
+      );
       return const Right(null);
     } catch (e) {
       debugPrint("Error: $e");

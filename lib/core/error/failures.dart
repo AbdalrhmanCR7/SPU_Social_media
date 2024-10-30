@@ -12,17 +12,17 @@ abstract class Failure extends Equatable {
 class ServerFailure extends Failure {
   const ServerFailure({
     required String? errorMessage,
-  }) : super(errorMessage ?? "Something went wrong");
+  }) : super(errorMessage ?? "Something abd wrong");
 }
 
 class CacheFailure extends Failure {
   const CacheFailure({
     required String? errorMessage,
-  }) : super(errorMessage ?? "Something went wrong");
+  }) : super(errorMessage ?? "Something moh wrong");
 }
 
 class GeneralFailure extends Failure {
   const GeneralFailure({
-    String errorMessage = "Something went wrong",
+    String errorMessage = "Something jjj wrong",
   }) : super(errorMessage);
 }
