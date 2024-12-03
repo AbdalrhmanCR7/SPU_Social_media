@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media_app/features/post/bloc/post_bloc.dart';
 
-class AddPostPage extends StatefulWidget {
+import '../../../../core/widgets/selected_image.dart';
+
+class AddPostPage extends StatelessWidget {
   const AddPostPage({super.key});
-
-  @override
-  _AddPostPageState createState() => _AddPostPageState();
-}
-
-class _AddPostPageState extends State<AddPostPage> {
-  final TextEditingController _textController = TextEditingController();
-  String? _imageUrl = 'https://via.placeholder.com/150';  // رابط صورة افتراضي
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +17,15 @@ class _AddPostPageState extends State<AddPostPage> {
           children: [
             const Row(
               children: [
-                CircleAvatar(
-                  // يمكنك إضافة صورة الملف الشخصي هنا
-                  radius: 20,
-                ),
+                // CircleAvatar(
+                //   radius: 20,
+                // ),
                 SizedBox(width: 10),
                 Text("User name"),
               ],
             ),
             TextField(
-              controller: _textController,
+              controller: context.read<PostBloc>().contentController,
               decoration: const InputDecoration(
                 hintText: "Type something",
                 border: InputBorder.none,
@@ -39,87 +34,61 @@ class _AddPostPageState extends State<AddPostPage> {
             ),
             Column(
               children: [
-                Row(
+                GestureDetector(
+                  onTap: () {
+                    context.read<PostBloc>().add(SelectImage());
+                  },
+                  child: const Row(
+                    children: [
+                      Icon(Icons.image, color: Colors.blue),
+                      Text("Add photo"),
+                    ],
+                  ),
+                ),
+                const Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.image, color: Colors.blue),
-                      onPressed: () {
-                        setState(() {
-                          _imageUrl = 'https://via.placeholder.com/150'; // تغيير رابط الصورة عند الضغط
-                        });
-                      },
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("Add photo"),
-                    ),
+                    Icon(Icons.video_call_rounded, color: Colors.green),
+                    Text("Add video"),
                   ],
                 ),
-                Row(
+                const Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.video_call_rounded,
-                          color: Colors.green),
-                      onPressed: () {
-                        // إضافة فيديو
-                      },
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("Add video"),
-                    ),
+                    Icon(Icons.camera_alt, color: Colors.redAccent),
+                    Text("Take a photo"),
                   ],
                 ),
-                Row(
+                const Row(
                   children: [
-                    IconButton(
-                      icon:
-                      const Icon(Icons.camera_alt, color: Colors.redAccent),
-                      onPressed: () {
-                        // التقاط صورة
-                      },
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("Take a photo"),
-                    ),
+                    Icon(Icons.person_sharp, color: Colors.black),
+                    Text("Mention"),
                   ],
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.person_sharp, color: Colors.black),
-                      onPressed: () {
-                        // ذكر شخص
-                      },
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text("Mention"),
-                    ),
-                  ],
+                const Center(
+                  child: Row(
+                    children: [
+                      Icon(Icons.upgrade_outlined, color: Colors.black),
+                      Text("post"),
+                    ],
+                  ),
                 ),
               ],
             ),
+            const Center(
 
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.only( top: 30),
+              child: Padding(
+                padding: EdgeInsets.only(top: 90),
 
-                  child: Image(
+                child:
 
-                    image: AssetImage(
-                        'assets/images/Slogo.jpg'
-                    ),
-                   // fit: BoxFit.fill,
-                    fit: BoxFit.contain,
-
-                  )
+                SelectedImage(),
                 ),
               ),
+
           ],
         ),
       ),
     );
   }
 }
+
+

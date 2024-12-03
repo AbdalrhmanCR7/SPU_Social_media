@@ -34,12 +34,12 @@ class NotificationPage extends StatelessWidget {
     }
 
     return ListTile(
-      leading: CircleAvatar(
-        radius: 25.0,
-        backgroundImage: NetworkImage(
-          'https://example.com/user_$index.jpg', // صورة المستخدم (مثال)
-        ),
-      ),
+      // leading: CircleAvatar(
+      //   radius: 25.0,
+      //   backgroundImage: NetworkImage(
+      //     'https://example.com/user_$index.jpg', // صورة المستخدم (مثال)
+      //   ),
+      // ),
       title: Row(
         children: [
           Expanded(

@@ -1,15 +1,18 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:social_media_app/features/login/data/data_sources/login_data_sourece.dart';
+import 'package:social_media_app/features/login/data/data_sources/login_remote_data_source.dart';
+import '../../../../app/data/data_source/app_local_data_source.dart';
 import '../../../../core/error/failures.dart';
 class LoginRepository {
-  final LoginDataSource loginDataSource = LoginDataSource();
+  final LoginRemoteDataSource loginRemoteDataSource = LoginRemoteDataSource();
+  final AppLocalDataSource _appLocalDataSource = AppLocalDataSource();
   Future<Either<Failure, void>> login({
     required String email,
     required String password,
   }) async {
     try {
-      await loginDataSource.login(email: email, password: password);
+      await loginRemoteDataSource.login(email: email, password: password);
+    //  await _appLocalDataSource.setUserLoggedInStatus(true);
       return const Right(null);
     } catch (e) {
       debugPrint("Error: $e");

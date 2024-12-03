@@ -28,7 +28,7 @@ String? emailValidator(String? email) {
 String? usernameValidator(String? name) {
   if (name == null || name.isEmpty) {
     return "Please enter username";
-  } else if (name.length < 3) {
+  } else if (name.length <= 3) {
     return "Username is short";
   }
   return null;

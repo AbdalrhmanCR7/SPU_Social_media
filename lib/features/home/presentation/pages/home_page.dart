@@ -1,11 +1,7 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import '../../../../core/routing/routes.dart';
 import '../../../chat/presentation/pages/chat_page.dart';
 import '../../../display/presentation/pages/display_page.dart';
-
 import '../../../notification/presentation/pages/navigation_page.dart';
 import '../../../post/presentation/pages/post_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
@@ -30,19 +26,19 @@ class _HomePageState extends State<HomePage> {
     DisPlayPage(),
     NotificationPage(),
     AddPostPage(),
-    ProfilePage(),
+    ProfilePage(uid:'uid' ),
   ];
 
   final List<String> titles = [
     'Home',
-    'Navigation',
+    'Notifications',
     'Post',
     'Profile',
   ];
 
   int currentIndex = 0;
 
-  // هنا نقوم بإضافة صورة الملف الشخصي بدلاً من الأيقونة
+
   List<Widget> navigationItems() {
     return [
       Icon(Icons.home_filled,
@@ -58,7 +54,6 @@ class _HomePageState extends State<HomePage> {
       ),
     ];
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,12 +65,8 @@ class _HomePageState extends State<HomePage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.exit_to_app),
-                  onPressed: ()  async{
-                    await FirebaseAuth.instance.signOut();
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      Routes .loginPage,
-                          (_) => false,
-                    );
+                  onPressed: ()  {
+
                   },
                 )
               ],
