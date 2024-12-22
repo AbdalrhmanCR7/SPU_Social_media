@@ -11,27 +11,28 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  //final AppLocalDataSource appLocalDataSource = AppLocalDataSource();
-  //final bool isLoggedIn = await appLocalDataSource.isLoggedIn;
+  final AppLocalDataSource appLocalDataSource = AppLocalDataSource();
+  final bool isLoggedIn = await appLocalDataSource.isLoggedIn;
   runApp(
     MyApp(
-      appRouter: AppRouter(),
+      appRouter: AppRouter(), isLoggedIn: isLoggedIn,
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   final AppRouter appRouter;
+  final bool isLoggedIn ;
 
   const MyApp({
     super.key,
-    required this.appRouter,
+    required this.appRouter, required this.isLoggedIn,
   });
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: Routes.initialPage,
+      initialRoute: isLoggedIn?Routes.homePage: Routes.loginPage,
       onGenerateRoute: appRouter.generateRoute,
     );
   }

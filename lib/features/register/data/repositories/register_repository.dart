@@ -5,7 +5,7 @@ import 'package:social_media_app/features/register/data/data_sources/register_re
 
 import '../../../../app/data/data_source/app_local_data_source.dart';
 import '../../../../core/error/failures.dart';
-
+import '../entities/user.dart' as user_entity;
 class RegisterRepository {
   final RegisterRemoteDataSource _registerRemoteDataSource =
       RegisterRemoteDataSource();
@@ -17,15 +17,15 @@ class RegisterRepository {
     required String userName,
   }) async {
     try {
-      await _registerRemoteDataSource.register(
+      final  user_entity.Userinfo userinfo= await _registerRemoteDataSource.register(
         email: email,
         password: password,
         userName: userName,
       );
 
-       //
-       // await _appLocalDataSource.setUserLoggedInStatus(true);
-       //  await _appLocalDataSource.setUserId(userId);
+
+       await _appLocalDataSource.setUserLoggedInStatus(true);
+        await _appLocalDataSource.setUserId(userinfo.uid!);
 
       return const Right(null);
     } catch (e) {

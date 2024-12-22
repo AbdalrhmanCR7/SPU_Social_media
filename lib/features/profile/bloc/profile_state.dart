@@ -1,7 +1,9 @@
-
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:social_media_app/features/profile/data/entities/profileUser.dart';
+
+import '../../post/data/entity/file_entity.dart';
+import '../../post/data/entity/x_file_entity.dart';
 
 @immutable
 sealed class ProfileState extends Equatable {}
@@ -28,8 +30,9 @@ final class ProfileErrorState extends ProfileState {
 final class LoadedState extends ProfileState {
   final ProfileUser profileUser;
 
-  LoadedState( { required this.profileUser});
+  LoadedState({required this.profileUser});
 
   @override
   List<Object?> get props => [profileUser];
 }
+

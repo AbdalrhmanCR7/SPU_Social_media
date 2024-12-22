@@ -11,8 +11,10 @@ class LoginRepository {
     required String password,
   }) async {
     try {
-      await loginRemoteDataSource.login(email: email, password: password);
-    //  await _appLocalDataSource.setUserLoggedInStatus(true);
+       final String userUId = await loginRemoteDataSource.login(email: email, password: password);
+      await _appLocalDataSource.setUserLoggedInStatus(true);
+      await _appLocalDataSource.setUserId(userUId);
+
       return const Right(null);
     } catch (e) {
       debugPrint("Error: $e");

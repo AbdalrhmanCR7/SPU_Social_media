@@ -7,10 +7,10 @@ class AppLocalDataSource {
     return sharedPreferences.getBool('isLoggedIn') ?? false;
   }
 
-  Future<int?> get userId async {
+  Future<String?> get userId async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
-    return sharedPreferences.getInt('userId') ;
+    return sharedPreferences.getString('userId') ;
   }
 
   Future<void> setUserLoggedInStatus(bool isLoggedIn) async {
@@ -19,9 +19,9 @@ class AppLocalDataSource {
     await sharedPreferences.setBool('isLoggedIn', isLoggedIn);
   }
 
-  Future<void> setUserId(int userId) async {
+  Future<void> setUserId(String userId) async {
     final SharedPreferences sharedPreferences =
         await SharedPreferences.getInstance();
-    await sharedPreferences.setInt('userId', userId );
+    await sharedPreferences.setString('userId', userId );
   }
 }

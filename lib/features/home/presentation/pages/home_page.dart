@@ -1,9 +1,14 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../chat/presentation/pages/chat_page.dart';
 import '../../../display/presentation/pages/display_page.dart';
 import '../../../notification/presentation/pages/navigation_page.dart';
 import '../../../post/presentation/pages/post_page.dart';
+import '../../../profile/bloc/profile_bloc.dart';
+import '../../../profile/bloc/profile_event.dart';
+import '../../../profile/data/data_sources/profile_remote_data_source.dart';
+import '../../../profile/data/repositories/profile_repository.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../search/presentation/pages/search_page.dart';
 
@@ -22,11 +27,14 @@ class _HomePageState extends State<HomePage> {
   // final String profileImageUrl =
   //     'https://example.com/profile.jpg'; // استبدل برابط الصورة الفعلي
 
-  final List<Widget> screens = const [
-    DisPlayPage(),
-    NotificationPage(),
-    AddPostPage(),
-    ProfilePage(uid:'uid' ),
+  final List<Widget> screens =  [
+    const DisPlayPage(),
+    const NotificationPage(),
+    const AddPostPage(),
+    BlocProvider(
+      create: (context) => ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))..add(FetchUserProfile() ),
+      child: const ProfilePage(),
+    ),
   ];
 
   final List<String> titles = [
@@ -49,11 +57,12 @@ class _HomePageState extends State<HomePage> {
           color: currentIndex == 2 ? Colors.white : Colors.black),
       const CircleAvatar(
         radius: 15, // يمكنك تعديل الحجم
-       // backgroundImage: NetworkImage(profileImageUrl), // صورة الملف الشخصي
+        // backgroundImage: NetworkImage(profileImageUrl), // صورة الملف الشخصي
         backgroundColor: Colors.white, // خلفية بيضاء للصورة
       ),
     ];
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +74,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.exit_to_app),
-                  onPressed: ()  {
+                  onPressed: () {
 
                   },
                 )
@@ -78,27 +87,27 @@ class _HomePageState extends State<HomePage> {
         title: Text(titles[currentIndex]),
         actions: currentIndex == 0 // عرض الأزرار فقط في صفحة الهوم
             ? [
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SearchPage()),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.chat), // زر المحادثات
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const ChatPage()), // الانتقال لصفحة المحادثات
-                    );
-                  },
-                ),
-              ]
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchPage()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.chat), // زر المحادثات
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                    const ChatPage()), // الانتقال لصفحة المحادثات
+              );
+            },
+          ),
+        ]
             : null, // لا تعرض أي أزرار إذا لم يكن في صفحة الهوم
       ),
       body: PageView(

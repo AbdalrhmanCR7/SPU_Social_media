@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_media_app/features/home/presentation/pages/home_page.dart';
@@ -14,21 +13,19 @@ import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/register/bloc/register_bloc.dart';
 import '../../features/register/presentation/pages/register_screen.dart';
 import 'routes.dart';
+
 class AppRouter {
   Route? generateRoute(RouteSettings settings) {
     final arguments = settings.arguments;
     switch (settings.name) {
-      case Routes.initialPage:
+      case Routes.loginPage:
         return MaterialPageRoute(
           builder: (context) => BlocProvider<LoginBloc>(
             create: (_) => LoginBloc(),
             child: const LoginPage(),
           ),
         );
-      case Routes.loginPage:
-        return MaterialPageRoute(
-          builder: (context) => const LoginPage(),
-        );
+
       case Routes.registerPage:
         return MaterialPageRoute(
           builder: (context) => BlocProvider<RegisterBloc>(
@@ -44,21 +41,9 @@ class AppRouter {
             child: const HomePage(),
           ),
         );
-      case Routes.ProfilePage:
-        final uid = arguments as String?;
-        return MaterialPageRoute(
-          builder: (_) => BlocProvider<ProfileBloc>(
-            create: (context) =>
-            ProfileBloc(
-              profileRepository: ProfileRepository(
-                NewProfileRemoteDataSource(),
-              )),
-            child:  ProfilePage(uid: uid),
-          ),
-        );
+
       default:
         return null;
     }
   }
 }
-

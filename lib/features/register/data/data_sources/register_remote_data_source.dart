@@ -8,7 +8,7 @@ class RegisterRemoteDataSource {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> register({
+  Future<user_entity.Userinfo> register({
     required String email,
     required String password,
     required String userName,
@@ -30,6 +30,8 @@ class RegisterRemoteDataSource {
       uid: firebaseUser.user?.uid,
       date: Timestamp.now(),
     );
-    await _firestore.collection('users').add(user.toMap());
+    await _firestore.collection('users').doc(user
+    .uid!).set(user.toMap());
+    return user;
   }
 }
