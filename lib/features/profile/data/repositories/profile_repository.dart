@@ -1,9 +1,10 @@
 import 'package:dartz/dartz.dart';
 import '../../../../app/data/data_source/app_local_data_source.dart';
 import '../../../../core/error/failures.dart';
-import '../../../post/data/entity/file_entity.dart';
-import '../../../post/data/entity/x_file_entity.dart';
+
 import '../data_sources/profile_remote_data_source.dart';
+import '../entities/entity/file_entity.dart';
+import '../entities/entity/x_file_entity.dart';
 import '../entities/profileUser.dart';
 
 class ProfileRepository {

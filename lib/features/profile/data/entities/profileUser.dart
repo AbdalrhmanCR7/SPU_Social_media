@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../../register/data/entities/user.dart';
 
 class ProfileUser extends Userinfo {
@@ -26,3 +28,5 @@ class ProfileUser extends Userinfo {
     );
   }
 }
+
+

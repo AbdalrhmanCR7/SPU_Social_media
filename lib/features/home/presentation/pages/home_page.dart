@@ -1,7 +1,11 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../chat/presentation/pages/chat_page.dart';
+import '../../../chat/bloc/chat_bloc.dart';
+import '../../../chat/bloc/chat_event.dart';
+import '../../../chat/data/data_sources/chat_remote_data_source.dart';
+import '../../../chat/data/repositories/chat_repository.dart';
+import '../../../chat/presentation/pages/chats_page.dart';
 import '../../../display/presentation/pages/display_page.dart';
 import '../../../notification/presentation/pages/navigation_page.dart';
 import '../../../post/presentation/pages/post_page.dart';
@@ -27,12 +31,14 @@ class _HomePageState extends State<HomePage> {
   // final String profileImageUrl =
   //     'https://example.com/profile.jpg'; // استبدل برابط الصورة الفعلي
 
-  final List<Widget> screens =  [
+  final List<Widget> screens = [
     const DisPlayPage(),
     const NotificationPage(),
     const AddPostPage(),
     BlocProvider(
-      create: (context) => ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))..add(FetchUserProfile() ),
+      create: (context) =>
+      ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
+        ..add(FetchUserProfile()),
       child: const ProfilePage(),
     ),
   ];
@@ -92,7 +98,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SearchPage()),
+                MaterialPageRoute(builder: (context) => SearchPagea()),
               );
             },
           ),
@@ -102,10 +108,13 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                    const ChatPage()), // الانتقال لصفحة المحادثات
+                  builder: (_) =>
+                     ChatPage(),
+
+                ),
               );
             },
+
           ),
         ]
             : null, // لا تعرض أي أزرار إذا لم يكن في صفحة الهوم

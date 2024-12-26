@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class SearchPage extends StatelessWidget {
+class SearchPagea extends StatelessWidget {
   final TextEditingController _searchController = TextEditingController();
 
-  SearchPage({super.key});
+  SearchPagea({super.key});
 
   @override
   Widget build(BuildContext context) {

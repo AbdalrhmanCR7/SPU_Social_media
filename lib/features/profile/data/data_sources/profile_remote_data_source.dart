@@ -1,13 +1,12 @@
-import 'dart:ffi';
-import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../post/data/entity/file_entity.dart';
-import '../../../post/data/entity/x_file_entity.dart';
+
+import '../entities/entity/file_entity.dart';
+import '../entities/entity/x_file_entity.dart';
 import '../entities/profileUser.dart';
 
 abstract class ProfileRepo {
@@ -34,7 +33,7 @@ class NewProfileRemoteDataSource implements ProfileRepo {
           email: userData['email'],
           date: userData['date'],
           bio: userData['bio'],
-        //    profileImageUrl:userData['profileImageUrl'],
+          profileImageUrl:userData['profileImageUrl'],
         );
       }
     }

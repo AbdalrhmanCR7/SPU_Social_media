@@ -2,8 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:social_media_app/features/profile/data/entities/profileUser.dart';
 
-import '../../post/data/entity/file_entity.dart';
-import '../../post/data/entity/x_file_entity.dart';
+import '../data/entities/entity/file_entity.dart';
+import '../data/entities/entity/x_file_entity.dart';
+
+
 
 @immutable
 sealed class ProfileState extends Equatable {}
@@ -36,3 +38,20 @@ final class LoadedState extends ProfileState {
   List<Object?> get props => [profileUser];
 }
 
+final class FileUploadedState extends ProfileState {
+  final FileEntities fileEntities;
+
+  FileUploadedState({required this.fileEntities});
+
+  @override
+  List<Object?> get props => [fileEntities];
+}
+
+final class ImageSelectedState extends ProfileState {
+  final XFileEntities? xFileEntities;
+
+  ImageSelectedState({this.xFileEntities});
+
+  @override
+  List<Object?> get props => [xFileEntities];
+}

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:social_media_app/features/profile/data/entities/profileUser.dart';
-import '../../post/data/entity/x_file_entity.dart';
+
+import '../data/entities/entity/x_file_entity.dart';
 
 abstract class ProfileEvent extends Equatable {
   const ProfileEvent();
@@ -25,4 +26,23 @@ class UpdateUserProfile extends ProfileEvent {
   List<Object> get props => [updatedProfile];
 }
 
+class UploadFileEvent extends ProfileEvent {
+  final XFileEntities xFileEntities;
+  final String folderName;
 
+  const UploadFileEvent({
+    required this.xFileEntities,
+    required this.folderName,
+  });
+
+  @override
+  List<Object> get props => [xFileEntities, folderName];
+}
+
+
+class SelectImageEvent extends ProfileEvent {
+  const SelectImageEvent();
+
+  @override
+  List<Object> get props => [];
+}
