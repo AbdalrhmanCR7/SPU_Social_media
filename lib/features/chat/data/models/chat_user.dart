@@ -1,39 +1,46 @@
+class User {
+   final String uid;
+   final String userName;
 
+   final String profileImageUrl;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+   User({
+      required this.uid,
+      required this.userName,
+
+      required this.profileImageUrl,
+   });
+}
+
 
 class Message {
-  final String id;
-  final String senderId;
-  final String receiverId;
-  final String content;
-  final DateTime timestamp;
+   final String senderId;
+   final String receiverId;
+   final String message;
+   final DateTime timestamp;
 
-  Message({
-    required this.id,
-    required this.senderId,
-    required this.receiverId,
-    required this.content,
-    required this.timestamp,
-  });
+   Message({
+      required this.senderId,
+      required this.receiverId,
+      required this.message,
+      required this.timestamp,
+   });
+
+   Map<String, dynamic> toMap() {
+    return {
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'message': message,
+      'timestamp': timestamp,
+    };
+  }
 
   factory Message.fromMap(Map<String, dynamic> map) {
     return Message(
-      id: map['id'],
-      senderId: map['senderId'],
-      receiverId: map['receiverId'],
-      content: map['content'],
-      timestamp: (map['timestamp'] as Timestamp).toDate(),
+      senderId: map['senderId'] as String,
+      receiverId: map['receiverId'] as String,
+      message: map['message'] as String,
+      timestamp: map['timestamp'] as DateTime,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'senderId': senderId,
-      'receiverId': receiverId,
-      'content': content,
-      'timestamp': timestamp,
-    };
   }
 }

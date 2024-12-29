@@ -1,38 +1,22 @@
-import 'package:equatable/equatable.dart';
+abstract class ChatEvent {}
 
-import '../data/models/chat_user.dart';
+class FetchUsersEvent extends ChatEvent {
+  final String name;
 
+  FetchUsersEvent({required this.name});
+}
 
-sealed class ChatEvent extends Equatable {
-  const ChatEvent();
+class FetchMessagesEvent extends ChatEvent {
+  final String currentUserId;
+  final String receiverId;
 
-  @override
-  List<Object?> get props => [];
+  FetchMessagesEvent({required this.currentUserId, required this.receiverId});
 }
 
 class SendMessageEvent extends ChatEvent {
-  final Message message;
+  final String senderId;
+  final String receiverId;
+  final String message;
 
-  const SendMessageEvent(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-class LoadMessagesEvent extends ChatEvent {
-  final String chatId;
-
-  const LoadMessagesEvent(this.chatId);
-
-  @override
-  List<Object?> get props => [chatId];
-}
-
-class SearchUsersEvent extends ChatEvent {
-  final String query;
-
-  const SearchUsersEvent(this.query);
-
-  @override
-  List<Object?> get props => [query];
+  SendMessageEvent({required this.senderId, required this.receiverId, required this.message});
 }

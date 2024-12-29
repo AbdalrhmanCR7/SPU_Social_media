@@ -1,38 +1,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../register/data/entities/user.dart';
+
 import '../models/chat_user.dart';
 
-class ChatRemoteDataSource {
-  final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
-  Future<void> sendMessage(Message message) async {
-    await _firebaseFirestore.collection('messages').add(message.toMap());
-  }
+class RemoteDataSource {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Stream<List<Message>> getMessages(String chatId) {
-    return _firebaseFirestore
-        .collection('messages')
-        .where('chatId', isEqualTo: chatId)
-        .orderBy('timestamp')
-        .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList());
-  }
-
-  Future<List<Userinfo>> searchUsers(String query) async {
-    final snapshot = await _firebaseFirestore
+  // جلب المستخدمين حسب الاسم
+  Future<List<User>> fetchUsersByName(String name) async {
+    final snapshot = await FirebaseFirestore.instance
         .collection('users')
-        .where('name', isGreaterThanOrEqualTo: query)
-        .where('name', isLessThanOrEqualTo: '${query}z')
+        .where('userName', isGreaterThanOrEqualTo: name)
+        .where('userName', isLessThanOrEqualTo: '$name\uf8ff')
         .get();
-    return snapshot.docs.map((doc) => Userinfo.fromMap(doc.data())).toList();
+
+    return snapshot.docs.map((doc) {
+      final userData = doc.data();
+      return User(
+        uid: doc.id,
+        userName: userData['userName'],
+
+        profileImageUrl: userData['profileImageUrl'],
+      );
+    }).toList();
   }
 
-  Future<Userinfo?> getUserById(String userId) async {
-    final doc = await _firebaseFirestore.collection('users').doc(userId).get();
-    if (doc.exists) {
-      return Userinfo.fromMap(doc.data() as Map<String, dynamic>);
-    } else {
-      return null;
-    }
+  // جلب الرسائل
+  Stream<List<Map<String, dynamic>>> getMessages(String currentUserId, String receiverId) {
+    return _firestore
+        .collection('messages')
+        .snapshots()
+        .map((snapshot)
+    {
+      return snapshot.docs
+          .map((doc) => doc.data())
+          .toList();
+
+    });
+  }
+
+
+
+  // إرسال رسالة
+  Future<void> sendMessage(
+      String senderId, String receiverId, String message) async {
+    await _firestore.collection('messages').add({
+      'senderId': senderId,
+      'receiverId': receiverId,
+      'message': message,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 }

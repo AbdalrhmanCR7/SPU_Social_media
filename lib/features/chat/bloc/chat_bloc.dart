@@ -1,42 +1,57 @@
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
-import 'package:dartz/dartz.dart'; // استخدام مكتبة dartz
-import 'package:firebase_auth/firebase_auth.dart';
-import '../data/models/chat_user.dart';
 
-import '../data/repositories/chat_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'chat_event.dart';
 import 'chat_state.dart';
+import '../data/repositories/chat_repository.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  final ChatRepository _chatRepository;
+  final UserRepository _userRepository;
 
-  ChatBloc(this._chatRepository) : super(ChatInitial()) {
+  ChatBloc(this._userRepository) : super(ChatInitial()) {
+    // جلب المستخدمين حسب الاسم
+    on<FetchUsersEvent>((event, emit) async {
+      emit(ChatLoading());
+
+        final users = await _userRepository.fetchUsersByName(event.name);
+        if (users.isNotEmpty) {
+          emit(ChatUsersLoaded(user: users.first)); // عرض أول مستخدم فقط
+        } else {
+          emit(ChatError(error: 'No users found'));
+        }
+
+
+
+    });
+
+    // جلب الرسائل بين مستخدمين
+    on<FetchMessagesEvent>((event, emit) async {
+      final messagesStream = _userRepository.getMessages(event.currentUserId, event.receiverId);
+      await emit.forEach<List<Map<String, dynamic>>>(
+        messagesStream,
+        onData: (messages) {
+          print('Messages loaded: ${messages.length}');
+          return ChatMessagesLoaded(messages: messages);
+        },
+        onError: (_, __) => ChatError(error: 'Error fetching messages'),
+      );
+    });
+
+
+
+    // إرسال رسالة
     on<SendMessageEvent>((event, emit) async {
-      emit(MessageSending());
-      final result = await _chatRepository.sendMessage(event.message);
-      result.fold(
-            (failure) => emit(ChatError('Failed to send message: ${failure.message}')),
-            (_) => emit(MessageSent()),
-      );
+      try {
+        await _userRepository.sendMessage(event.senderId, event.receiverId, event.message);
+        emit(ChatMessagesSent());
+        // جلب الرسائل مباشرة بعد الإرسال لضمان التحديث
+        add(FetchMessagesEvent(currentUserId: event.senderId, receiverId: event.receiverId));
+      } catch (e) {
+        emit(ChatError(error: 'Error sending message: $e'));
+      }
     });
 
-    on<LoadMessagesEvent>((event, emit) async {
-      emit(MessagesLoading());
-      await emit.forEach<List<Message>>(
-        _chatRepository.getMessages(event.chatId),
-        onData: (messages) => MessagesLoaded(messages),
-        onError: (error, stackTrace) => ChatError('Failed to load messages: $error'),
-      );
-    });
 
-    on<SearchUsersEvent>((event, emit) async {
-      emit(UsersLoading());
-      final result = await _chatRepository.searchUsers(event.query);
-      result.fold(
-            (failure) => emit(ChatError('Failed to search users: ${failure.message}')),
-            (users) => emit(UsersLoaded(users.cast<User>())),
-      );
-    });
+
   }
 }

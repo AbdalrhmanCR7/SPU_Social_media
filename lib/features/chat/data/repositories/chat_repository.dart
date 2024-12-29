@@ -1,49 +1,33 @@
-import 'package:dartz/dartz.dart'; // استخدام مكتبة dartz
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:social_media_app/features/chat/data/models/chat_user.dart';
 
-import '../../../register/data/entities/user.dart';
 import '../data_sources/chat_remote_data_source.dart';
-import '../models/chat_user.dart';
 
-class ChatRepository {
-  final ChatRemoteDataSource _dataSource;
+class UserRepository {
+  final RemoteDataSource remoteDataSource;
 
-  ChatRepository(this._dataSource);
+  UserRepository(this.remoteDataSource);
 
-  Future<Either<Failure, void>> sendMessage(Message message) async {
+  Future<List<User>> fetchUsersByName(String name) async {
     try {
-      await _dataSource.sendMessage(message);
-      return right(null);
+      return await remoteDataSource.fetchUsersByName(name);
     } catch (e) {
-      return left(Failure(message: e.toString()));
+      throw Exception('Error fetching users: $e');
     }
   }
 
-  Stream<List<Message>> getMessages(String chatId) {
-    return _dataSource.getMessages(chatId);
-  }
-
-  Future<Either<Failure, List<Userinfo>>> searchUsers(String query) async {
+  Stream<List<Map<String, dynamic>>> getMessages(String currentUserId, String receiverId) {
     try {
-      final users = await _dataSource.searchUsers(query);
-      return right(users);
+      return remoteDataSource.getMessages(currentUserId, receiverId);
     } catch (e) {
-      return left(Failure(message: e.toString()));
+      throw Exception('Error fetching messages: $e');
     }
   }
 
-  Future<Either<Failure, User?>> getUserById(String userId) async {
+  Future<void> sendMessage(String senderId, String receiverId, String message) async {
     try {
-      final user = await _dataSource.getUserById(userId);
-      return right(user as User?);
+      await remoteDataSource.sendMessage(senderId, receiverId, message);
     } catch (e) {
-      return left(Failure(message: e.toString()));
+      throw Exception('Error sending message: $e');
     }
   }
-}
-
-class Failure {
-  final String message;
-  Failure({required this.message});
 }

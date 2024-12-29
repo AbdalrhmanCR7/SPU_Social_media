@@ -1,10 +1,7 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../chat/bloc/chat_bloc.dart';
-import '../../../chat/bloc/chat_event.dart';
-import '../../../chat/data/data_sources/chat_remote_data_source.dart';
-import '../../../chat/data/repositories/chat_repository.dart';
+
 import '../../../chat/presentation/pages/chats_page.dart';
 import '../../../display/presentation/pages/display_page.dart';
 import '../../../notification/presentation/pages/navigation_page.dart';
@@ -26,7 +23,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
 
-
   // هنا يمكنك وضع رابط صورة المستخدم
   // final String profileImageUrl =
   //     'https://example.com/profile.jpg'; // استبدل برابط الصورة الفعلي
@@ -37,8 +33,8 @@ class _HomePageState extends State<HomePage> {
     const AddPostPage(),
     BlocProvider(
       create: (context) =>
-      ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
-        ..add(FetchUserProfile()),
+          ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
+            ..add(FetchUserProfile()),
       child: const ProfilePage(),
     ),
   ];
@@ -51,7 +47,6 @@ class _HomePageState extends State<HomePage> {
   ];
 
   int currentIndex = 0;
-
 
   List<Widget> navigationItems() {
     return [
@@ -72,7 +67,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       endDrawer: Drawer(
         child: ListView(
           children: [
@@ -80,9 +74,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.exit_to_app),
-                  onPressed: () {
-
-                  },
+                  onPressed: () {},
                 )
               ],
             ),
@@ -93,30 +85,27 @@ class _HomePageState extends State<HomePage> {
         title: Text(titles[currentIndex]),
         actions: currentIndex == 0 // عرض الأزرار فقط في صفحة الهوم
             ? [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SearchPagea()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat), // زر المحادثات
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                     ChatPage(),
-
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPagea()),
+                    );
+                  },
                 ),
-              );
-            },
-
-          ),
-        ]
+                IconButton(
+                  icon: const Icon(Icons.chat), // زر المحادثات
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatFeature(),
+                      ),
+                    );
+                  },
+                ),
+              ]
             : null, // لا تعرض أي أزرار إذا لم يكن في صفحة الهوم
       ),
       body: PageView(
