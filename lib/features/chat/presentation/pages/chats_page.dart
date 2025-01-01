@@ -7,15 +7,11 @@ import '../../bloc/chat_event.dart';
 import '../../bloc/chat_state.dart';
 import '../../data/models/chat_user.dart';
 
-
 class ChatFeature extends StatelessWidget {
   const ChatFeature({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    final String currentUserId = currentUser?.uid ?? '';
-
     return Scaffold(
       appBar: AppBar(
         title: Card(
@@ -54,25 +50,35 @@ class ChatFeature extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundImage: (user.profileImageUrl.isNotEmpty)
                         ? NetworkImage(user.profileImageUrl)
-                        : const AssetImage('assets/images/default_profile_pic.jpg')
-                    as ImageProvider,
+                        : const AssetImage(
+                                'assets/images/default_profile_pic.jpg')
+                            as ImageProvider,
                   ),
                   onTap: () {
                     if (user.uid.isNotEmpty) {
-                      context.read<ChatBloc>().add(FetchChatRoomEvent(receiverId: user.uid));
+                      context
+                          .read<ChatBloc>()
+                          .add(FetchChatRoomEvent(receiverId: user.uid));
 
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => StreamBuilder<ChatState>(
-                            stream: context.read<ChatBloc>().stream.where((state) => state is ChatRoomLoaded),
+                            stream: context
+                                .read<ChatBloc>()
+                                .stream
+                                .where((state) => state is ChatRoomLoaded),
                             builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               } else if (snapshot.hasError) {
-                                return Center(child: Text('Error: ${snapshot.error}'));
+                                return Center(
+                                    child: Text('Error: ${snapshot.error}'));
                               } else if (snapshot.hasData) {
-                                final chatRoomState = snapshot.data as ChatRoomLoaded;
+                                final chatRoomState =
+                                    snapshot.data as ChatRoomLoaded;
                                 final chatRoomId = chatRoomState.chatRoomId;
                                 return ChatScreen(
                                   userName: user.userName,
@@ -81,7 +87,8 @@ class ChatFeature extends StatelessWidget {
                                   chatId: chatRoomId,
                                 );
                               } else {
-                                return const Center(child: Text('No chat room found.'));
+                                return const Center(
+                                    child: Text('No chat room found.'));
                               }
                             },
                           ),
@@ -90,12 +97,15 @@ class ChatFeature extends StatelessWidget {
                         final chatRoomState = context.read<ChatBloc>().state;
                         if (chatRoomState is ChatRoomLoaded) {
                           final chatRoomId = chatRoomState.chatRoomId;
-                          context.read<ChatBloc>().add(FetchMessagesEvent(chatId: chatRoomId));
+                          context
+                              .read<ChatBloc>()
+                              .add(FetchMessagesEvent(chatId: chatRoomId));
                         }
                       });
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Receiver ID is missing!')),
+                        const SnackBar(
+                            content: Text('Receiver ID is missing!')),
                       );
                     }
                   },
@@ -112,7 +122,6 @@ class ChatFeature extends StatelessWidget {
     );
   }
 }
-
 
 class ChatScreen extends StatelessWidget {
   final String userName;
@@ -143,7 +152,7 @@ class ChatScreen extends StatelessWidget {
               backgroundImage: profileImageUrl.isNotEmpty
                   ? NetworkImage(profileImageUrl)
                   : const AssetImage('assets/images/default_profile_pic.jpg')
-              as ImageProvider,
+                      as ImageProvider,
               radius: 20,
             ),
             const SizedBox(width: 10),
@@ -158,20 +167,14 @@ class ChatScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.call),
-            onPressed: () {
-              // وظيفة مكالمة الصوت
-            },
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.videocam),
-            onPressed: () {
-              // وظيفة مكالمة الفيديو
-            },
+            onPressed: () {},
           ),
           PopupMenuButton<String>(
-            onSelected: (value) {
-              // وظائف الإعدادات
-            },
+            onSelected: (value) {},
             itemBuilder: (BuildContext context) {
               return {'إعدادات 1', 'إعدادات 2'}.map((String choice) {
                 return PopupMenuItem<String>(
@@ -187,7 +190,8 @@ class ChatScreen extends StatelessWidget {
         children: [
           Expanded(
             child: StreamBuilder<List<Message>>(
-              stream: chatBloc.chatRepository.getMessages(chatId), // استخدم chatId الصحيح
+              stream: chatBloc.chatRepository.getMessages(chatId),
+              // استخدم chatId الصحيح
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -203,24 +207,31 @@ class ChatScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final message = messages[index];
 
-                      // تحقق من أن الرسالة تحتوي على الحقول المطلوبة وأنها تتعلق بالمستخدم الحالي أو المستقبل
-                      if ((message.senderId == FirebaseAuth.instance.currentUser?.uid || message.receiverId == FirebaseAuth.instance.currentUser?.uid) && message.message.isNotEmpty) {
-                        bool isCurrentUserMessage = message.senderId == FirebaseAuth.instance.currentUser?.uid;
+                      if ((message.senderId ==
+                                  FirebaseAuth.instance.currentUser?.uid ||
+                              message.receiverId ==
+                                  FirebaseAuth.instance.currentUser?.uid) &&
+                          message.message.isNotEmpty) {
+                        bool isCurrentUserMessage = message.senderId ==
+                            FirebaseAuth.instance.currentUser?.uid;
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5.0, horizontal: 10.0),
                           child: BubbleSpecialThree(
-                            text: message.message, // استخدم حقل النص من الرسالة
-                            color: isCurrentUserMessage ? Colors.blueAccent : Colors.grey.shade300, // تغيير لون الفقاعة بناءً على المرسل
-                            tail: true,
+                            text: message.message,
+                            color: isCurrentUserMessage
+                                ? Colors.blueAccent
+                                : Colors.grey.shade300,
                             textStyle: TextStyle(
                               fontSize: 18,
-                              color: isCurrentUserMessage ? Colors.white : Colors.black, // تغيير لون النص بناءً على المرسل
+                              color: isCurrentUserMessage
+                                  ? Colors.white
+                                  : Colors.black,
                             ),
-                            isSender: isCurrentUserMessage, // تحديد ما إذا كان المرسل هو المستخدم الحالي
+                            isSender: isCurrentUserMessage,
                           ),
                         );
                       } else {
-                        // إذا كانت البيانات مفقودة أو الرسالة لا تتعلق بالمستخدم الحالي أو المستقبل، تجاهل هذه الرسالة
                         return Container();
                       }
                     },
@@ -235,21 +246,15 @@ class ChatScreen extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.camera_alt),
-                  onPressed: () {
-                    // وظيفة الكاميرا
-                  },
+                  onPressed: () {},
                 ),
                 IconButton(
                   icon: const Icon(Icons.photo),
-                  onPressed: () {
-                    // وظيفة الاستوديو
-                  },
+                  onPressed: () {},
                 ),
                 IconButton(
                   icon: const Icon(Icons.mic),
-                  onPressed: () {
-                    // وظيفة تسجيل الصوت
-                  },
+                  onPressed: () {},
                 ),
                 Expanded(
                   child: TextField(
@@ -268,7 +273,7 @@ class ChatScreen extends StatelessWidget {
                     if (_messageController.text.isNotEmpty) {
                       final messageText = _messageController.text;
                       chatBloc.add(SendMessageEvent(
-                        chatId: chatId, // استخدم chatId الصحيح
+                        chatId: chatId,
                         receiverId: receiverId,
                         message: messageText,
                       ));
@@ -284,4 +289,3 @@ class ChatScreen extends StatelessWidget {
     );
   }
 }
-

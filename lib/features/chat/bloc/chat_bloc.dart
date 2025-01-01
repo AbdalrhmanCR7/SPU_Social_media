@@ -8,15 +8,17 @@ import 'chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final UserRepository _userRepository;
+
   UserRepository get chatRepository => UserRepository(ChatRemoteDataSource());
+
   ChatBloc(this._userRepository) : super(ChatInitial()) {
     on<FetchChatRoomEvent>((event, emit) async {
       final chatRoomId = await _userRepository.getChatRoom(event.receiverId);
       if (chatRoomId != null) {
         emit(ChatRoomLoaded(chatRoomId: chatRoomId));
       } else {
-        // إذا لم تكن الغرفة موجودة، قم بإنشائها
-        final newChatRoomId = await _userRepository.createChatRoom(event.receiverId);
+        final newChatRoomId =
+            await _userRepository.createChatRoom(event.receiverId);
         emit(ChatRoomCreated(chatRoomId: newChatRoomId));
         emit(ChatRoomLoaded(chatRoomId: newChatRoomId));
       }
@@ -42,13 +44,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     });
 
     on<SendMessageEvent>((event, emit) async {
-      await _userRepository.sendMessage(event.chatId, event.receiverId, event.message);
+      await _userRepository.sendMessage(
+          event.chatId, event.receiverId, event.message);
       emit(ChatMessagesSent());
 
-      // فور إرسال الرسالة، جلب الرسائل مجددًا لتحديث العرض
       add(FetchMessagesEvent(chatId: event.chatId));
     });
-
   }
 }
-
