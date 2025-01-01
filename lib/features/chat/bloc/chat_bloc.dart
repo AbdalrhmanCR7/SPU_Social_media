@@ -1,57 +1,54 @@
+import 'package:bloc/bloc.dart';
 
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import '../data/data_sources/chat_remote_data_source.dart';
+import '../data/models/chat_user.dart';
+import '../data/repositories/chat_repository.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
-import '../data/repositories/chat_repository.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final UserRepository _userRepository;
-
+  UserRepository get chatRepository => UserRepository(ChatRemoteDataSource());
   ChatBloc(this._userRepository) : super(ChatInitial()) {
-    // جلب المستخدمين حسب الاسم
-    on<FetchUsersEvent>((event, emit) async {
-      emit(ChatLoading());
-
-        final users = await _userRepository.fetchUsersByName(event.name);
-        if (users.isNotEmpty) {
-          emit(ChatUsersLoaded(user: users.first)); // عرض أول مستخدم فقط
-        } else {
-          emit(ChatError(error: 'No users found'));
-        }
-
-
-
+    on<FetchChatRoomEvent>((event, emit) async {
+      final chatRoomId = await _userRepository.getChatRoom(event.receiverId);
+      if (chatRoomId != null) {
+        emit(ChatRoomLoaded(chatRoomId: chatRoomId));
+      } else {
+        // إذا لم تكن الغرفة موجودة، قم بإنشائها
+        final newChatRoomId = await _userRepository.createChatRoom(event.receiverId);
+        emit(ChatRoomCreated(chatRoomId: newChatRoomId));
+        emit(ChatRoomLoaded(chatRoomId: newChatRoomId));
+      }
     });
 
-    // جلب الرسائل بين مستخدمين
+    on<FetchUsersEvent>((event, emit) async {
+      emit(ChatLoading());
+      final users = await _userRepository.fetchUsersByName(event.name);
+      if (users.isNotEmpty) {
+        emit(ChatUsersLoaded(users: users));
+      } else {
+        emit(ChatError(error: 'No users found'));
+      }
+    });
+
     on<FetchMessagesEvent>((event, emit) async {
-      final messagesStream = _userRepository.getMessages(event.currentUserId, event.receiverId);
-      await emit.forEach<List<Map<String, dynamic>>>(
+      final messagesStream = _userRepository.getMessages(event.chatId);
+      await emit.forEach<List<Message>>(
         messagesStream,
-        onData: (messages) {
-          print('Messages loaded: ${messages.length}');
-          return ChatMessagesLoaded(messages: messages);
-        },
+        onData: (messages) => ChatMessagesLoaded(messages: messages),
         onError: (_, __) => ChatError(error: 'Error fetching messages'),
       );
     });
 
-
-
-    // إرسال رسالة
     on<SendMessageEvent>((event, emit) async {
-      try {
-        await _userRepository.sendMessage(event.senderId, event.receiverId, event.message);
-        emit(ChatMessagesSent());
-        // جلب الرسائل مباشرة بعد الإرسال لضمان التحديث
-        add(FetchMessagesEvent(currentUserId: event.senderId, receiverId: event.receiverId));
-      } catch (e) {
-        emit(ChatError(error: 'Error sending message: $e'));
-      }
+      await _userRepository.sendMessage(event.chatId, event.receiverId, event.message);
+      emit(ChatMessagesSent());
+
+      // فور إرسال الرسالة، جلب الرسائل مجددًا لتحديث العرض
+      add(FetchMessagesEvent(chatId: event.chatId));
     });
-
-
 
   }
 }
+

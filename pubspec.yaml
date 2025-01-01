@@ -30,6 +30,7 @@ dependencies:
   dartz: ^0.10.1
   equatable: ^2.0.5
   shared_preferences: ^2.2.3
+  chat_bubbles: ^1.6.0
 
   fluttertoast: ^8.2.8
   curved_navigation_bar: ^1.0.6

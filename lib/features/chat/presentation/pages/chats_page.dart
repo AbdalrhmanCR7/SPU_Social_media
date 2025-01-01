@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chat_bubbles/chat_bubbles.dart';
 import '../../bloc/chat_bloc.dart';
 import '../../bloc/chat_event.dart';
 import '../../bloc/chat_state.dart';
+import '../../data/models/chat_user.dart';
+
 
 class ChatFeature extends StatelessWidget {
   const ChatFeature({super.key});
@@ -30,52 +32,74 @@ class ChatFeature extends StatelessWidget {
       ),
       body: BlocBuilder<ChatBloc, ChatState>(
         builder: (context, state) {
-          if (state is ChatLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is ChatUsersLoaded) {
-            final user = state.user;
+          if (state is ChatUsersLoaded) {
+            final users = state.users;
 
-            return ListTile(
-              title: Text(
-                user.userName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              leading: CircleAvatar(
-                backgroundImage: (user.profileImageUrl.isNotEmpty)
-                    ? NetworkImage(user.profileImageUrl)
-                    : const AssetImage('assets/images/default_profile_pic.jpg')
-                as ImageProvider,
-              ),
-              onTap: () {
-                if (user.uid.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        userName: user.userName,
-                        profileImageUrl: user.profileImageUrl,
-                        receiverId: user.uid,
-                        currentUserId: currentUserId,
-                      ),
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+
+                return ListTile(
+                  title: Text(
+                    user.userName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
+                  ),
+                  leading: CircleAvatar(
+                    backgroundImage: (user.profileImageUrl.isNotEmpty)
+                        ? NetworkImage(user.profileImageUrl)
+                        : const AssetImage('assets/images/default_profile_pic.jpg')
+                    as ImageProvider,
+                  ),
+                  onTap: () {
+                    if (user.uid.isNotEmpty) {
+                      context.read<ChatBloc>().add(FetchChatRoomEvent(receiverId: user.uid));
 
-                  FirebaseFirestore.instance.collection('chats').doc(currentUserId).collection('users').doc(user.uid).set({
-                    'userName': user.userName,
-                    'profileImageUrl': user.profileImageUrl,
-                    'receiverId': user.uid,
-                  });
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Receiver ID is missing!')),
-                  );
-                }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StreamBuilder<ChatState>(
+                            stream: context.read<ChatBloc>().stream.where((state) => state is ChatRoomLoaded),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              } else if (snapshot.hasError) {
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              } else if (snapshot.hasData) {
+                                final chatRoomState = snapshot.data as ChatRoomLoaded;
+                                final chatRoomId = chatRoomState.chatRoomId;
+                                return ChatScreen(
+                                  userName: user.userName,
+                                  profileImageUrl: user.profileImageUrl,
+                                  receiverId: user.uid,
+                                  chatId: chatRoomId,
+                                );
+                              } else {
+                                return const Center(child: Text('No chat room found.'));
+                              }
+                            },
+                          ),
+                        ),
+                      ).then((_) {
+                        final chatRoomState = context.read<ChatBloc>().state;
+                        if (chatRoomState is ChatRoomLoaded) {
+                          final chatRoomId = chatRoomState.chatRoomId;
+                          context.read<ChatBloc>().add(FetchMessagesEvent(chatId: chatRoomId));
+                        }
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Receiver ID is missing!')),
+                      );
+                    }
+                  },
+                );
               },
             );
           } else if (state is ChatError) {
@@ -89,30 +113,31 @@ class ChatFeature extends StatelessWidget {
   }
 }
 
+
 class ChatScreen extends StatelessWidget {
   final String userName;
   final String profileImageUrl;
   final String receiverId;
-  final String currentUserId;
+  final String chatId;
 
   ChatScreen({
     super.key,
     required this.userName,
     required this.profileImageUrl,
     required this.receiverId,
-    required this.currentUserId,
+    required this.chatId,
   });
 
   final TextEditingController _messageController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    context.read<ChatBloc>().add(FetchMessagesEvent(
-        currentUserId: currentUserId, receiverId: receiverId));
+    final chatBloc = context.read<ChatBloc>();
 
     return Scaffold(
       appBar: AppBar(
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             CircleAvatar(
               backgroundImage: profileImageUrl.isNotEmpty
@@ -122,53 +147,84 @@ class ChatScreen extends StatelessWidget {
               radius: 20,
             ),
             const SizedBox(width: 10),
-            Text(userName),
+            Flexible(
+              child: Text(
+                userName,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.call),
+            onPressed: () {
+              // وظيفة مكالمة الصوت
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.videocam),
+            onPressed: () {
+              // وظيفة مكالمة الفيديو
+            },
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              // وظائف الإعدادات
+            },
+            itemBuilder: (BuildContext context) {
+              return {'إعدادات 1', 'إعدادات 2'}.map((String choice) {
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Text(choice),
+                );
+              }).toList();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: BlocBuilder<ChatBloc, ChatState>(
-              builder: (context, state) {
-                if (state is ChatLoading) {
+            child: StreamBuilder<List<Message>>(
+              stream: chatBloc.chatRepository.getMessages(chatId), // استخدم chatId الصحيح
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (state is ChatMessagesLoaded) {
-                  final messages = state.messages;
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No messages yet.'));
+                } else {
+                  final messages = snapshot.data!;
                   return ListView.builder(
+                    reverse: true,
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
-                      final messageData = messages[index];
-                      bool isCurrentUserMessage = messageData['senderId'] == currentUserId;
-                      return Align(
-                        alignment: isCurrentUserMessage
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Padding(
+                      final message = messages[index];
+
+                      // تحقق من أن الرسالة تحتوي على الحقول المطلوبة وأنها تتعلق بالمستخدم الحالي أو المستقبل
+                      if ((message.senderId == FirebaseAuth.instance.currentUser?.uid || message.receiverId == FirebaseAuth.instance.currentUser?.uid) && message.message.isNotEmpty) {
+                        bool isCurrentUserMessage = message.senderId == FirebaseAuth.instance.currentUser?.uid;
+                        return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                            decoration: BoxDecoration(
-                              color: isCurrentUserMessage
-                                  ? Colors.blueAccent
-                                  : Colors.grey[300],
-                              borderRadius: BorderRadius.circular(12),
+                          child: BubbleSpecialThree(
+                            text: message.message, // استخدم حقل النص من الرسالة
+                            color: isCurrentUserMessage ? Colors.blueAccent : Colors.grey.shade300, // تغيير لون الفقاعة بناءً على المرسل
+                            tail: true,
+                            textStyle: TextStyle(
+                              fontSize: 18,
+                              color: isCurrentUserMessage ? Colors.white : Colors.black, // تغيير لون النص بناءً على المرسل
                             ),
-                            child: Text(
-                              messageData['message'],
-                              style: TextStyle(
-                                color: isCurrentUserMessage ? Colors.white : Colors.black,
-                              ),
-                            ),
+                            isSender: isCurrentUserMessage, // تحديد ما إذا كان المرسل هو المستخدم الحالي
                           ),
-                        ),
-                      );
+                        );
+                      } else {
+                        // إذا كانت البيانات مفقودة أو الرسالة لا تتعلق بالمستخدم الحالي أو المستقبل، تجاهل هذه الرسالة
+                        return Container();
+                      }
                     },
                   );
-                } else if (state is ChatError) {
-                  return Center(child: Text('Error: ${state.error}'));
-                } else {
-                  return const Center(child: Text('No messages yet.'));
                 }
               },
             ),
@@ -177,6 +233,24 @@ class ChatScreen extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt),
+                  onPressed: () {
+                    // وظيفة الكاميرا
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo),
+                  onPressed: () {
+                    // وظيفة الاستوديو
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.mic),
+                  onPressed: () {
+                    // وظيفة تسجيل الصوت
+                  },
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -189,26 +263,18 @@ class ChatScreen extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () {
-                      if (_messageController.text.isNotEmpty) {
-                        final messageText = _messageController.text;
-                        context.read<ChatBloc>().add(SendMessageEvent(
-                          senderId: currentUserId,
-                          receiverId: receiverId,
-                          message: messageText,
-                        ));
-
-
-
-                        context.read<ChatBloc>().add(FetchMessagesEvent(
-                          currentUserId: currentUserId,
-                          receiverId: receiverId,
-                        ));
-
-                        _messageController.clear();
-                      }
+                  icon: const Icon(Icons.send),
+                  onPressed: () {
+                    if (_messageController.text.isNotEmpty) {
+                      final messageText = _messageController.text;
+                      chatBloc.add(SendMessageEvent(
+                        chatId: chatId, // استخدم chatId الصحيح
+                        receiverId: receiverId,
+                        message: messageText,
+                      ));
+                      _messageController.clear();
                     }
+                  },
                 ),
               ],
             ),
@@ -218,3 +284,4 @@ class ChatScreen extends StatelessWidget {
     );
   }
 }
+

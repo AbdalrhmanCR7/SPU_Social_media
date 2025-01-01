@@ -41,8 +41,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ChatBloc(UserRepository(RemoteDataSource())),
+      create: (context) => ChatBloc(UserRepository(ChatRemoteDataSource())),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         initialRoute: isLoggedIn ? Routes.homePage : Routes.loginPage,
         onGenerateRoute: appRouter.generateRoute,
       ),
