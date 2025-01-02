@@ -26,12 +26,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     on<FetchUsersEvent>((event, emit) async {
       emit(ChatLoading());
-      final users = await _userRepository.fetchUsersByName(event.name);
-      if (users.isNotEmpty) {
-        emit(ChatUsersLoaded(users: users));
-      } else {
-        emit(ChatError(error: 'No users found'));
-      }
+
+        final userStream = await _userRepository.fetchUsersByName(event.name);
+        await for (final users in userStream) {
+          if (users.isNotEmpty) {
+            emit(ChatUsersLoaded(users: users));
+          } else {
+            emit(ChatError(error: 'No users found'));
+          }
+        }
     });
 
     on<FetchMessagesEvent>((event, emit) async {

@@ -6,9 +6,9 @@ import '../data_sources/chat_remote_data_source.dart';
 
   UserRepository(this.remoteDataSource);
 
-  Future<List<UserChat>> fetchUsersByName(String name) async {
+  Future<Stream<List<UserChat>>> fetchUsersByName(String name) async {
     try {
-      return await remoteDataSource.fetchUsersByName(name);
+      return remoteDataSource.fetchUsersByName(name);
     } catch (e) {
       throw Exception('Error fetching users: $e');
     }

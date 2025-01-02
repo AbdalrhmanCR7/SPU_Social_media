@@ -12,6 +12,8 @@ class ChatFeature extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chatBloc = context.read<ChatBloc>();
+
     return Scaffold(
       appBar: AppBar(
         title: Card(
@@ -21,21 +23,25 @@ class ChatFeature extends StatelessWidget {
               hintText: 'Search...',
             ),
             onChanged: (val) {
-              context.read<ChatBloc>().add(FetchUsersEvent(name: val));
+              chatBloc.add(FetchUsersEvent(name: val));
             },
           ),
         ),
       ),
-      body: BlocBuilder<ChatBloc, ChatState>(
-        builder: (context, state) {
-          if (state is ChatUsersLoaded) {
-            final users = state.users;
+      body: StreamBuilder<ChatState>(
+        stream: chatBloc.stream.where((state) => state is ChatUsersLoaded || state is ChatError),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data is ChatUsersLoaded) {
+            final users = (snapshot.data as ChatUsersLoaded).users;
 
             return ListView.builder(
               itemCount: users.length,
               itemBuilder: (context, index) {
                 final user = users[index];
-
                 return ListTile(
                   title: Text(
                     user.userName,
@@ -50,35 +56,26 @@ class ChatFeature extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundImage: (user.profileImageUrl.isNotEmpty)
                         ? NetworkImage(user.profileImageUrl)
-                        : const AssetImage(
-                                'assets/images/default_profile_pic.jpg')
-                            as ImageProvider,
+                        : const AssetImage('assets/images/تنزيل.png') as ImageProvider,
                   ),
+
+
                   onTap: () {
                     if (user.uid.isNotEmpty) {
-                      context
-                          .read<ChatBloc>()
-                          .add(FetchChatRoomEvent(receiverId: user.uid));
+                      chatBloc.add(FetchChatRoomEvent(receiverId: user.uid));
 
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => StreamBuilder<ChatState>(
-                            stream: context
-                                .read<ChatBloc>()
-                                .stream
-                                .where((state) => state is ChatRoomLoaded),
+                            stream: chatBloc.stream.where((state) => state is ChatRoomLoaded),
                             builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
                               } else if (snapshot.hasError) {
-                                return Center(
-                                    child: Text('Error: ${snapshot.error}'));
-                              } else if (snapshot.hasData) {
-                                final chatRoomState =
-                                    snapshot.data as ChatRoomLoaded;
+                                return Center(child: Text('Error: ${snapshot.error}'));
+                              } else if (snapshot.hasData && snapshot.data is ChatRoomLoaded) {
+                                final chatRoomState = snapshot.data as ChatRoomLoaded;
                                 final chatRoomId = chatRoomState.chatRoomId;
                                 return ChatScreen(
                                   userName: user.userName,
@@ -87,33 +84,27 @@ class ChatFeature extends StatelessWidget {
                                   chatId: chatRoomId,
                                 );
                               } else {
-                                return const Center(
-                                    child: Text('No chat room found.'));
+                                return const Center(child: Text('No chat room found.'));
                               }
                             },
                           ),
                         ),
                       ).then((_) {
-                        final chatRoomState = context.read<ChatBloc>().state;
+                        final chatRoomState = chatBloc.state;
                         if (chatRoomState is ChatRoomLoaded) {
                           final chatRoomId = chatRoomState.chatRoomId;
-                          context
-                              .read<ChatBloc>()
-                              .add(FetchMessagesEvent(chatId: chatRoomId));
+                          chatBloc.add(FetchMessagesEvent(chatId: chatRoomId));
                         }
                       });
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Receiver ID is missing!')),
+                        const SnackBar(content: Text('Receiver ID is missing!')),
                       );
                     }
                   },
                 );
               },
             );
-          } else if (state is ChatError) {
-            return Center(child: Text('Error: ${state.error}'));
           } else {
             return const Center(child: Text('Please enter a name to search'));
           }
@@ -122,6 +113,7 @@ class ChatFeature extends StatelessWidget {
     );
   }
 }
+
 
 class ChatScreen extends StatelessWidget {
   final String userName;
@@ -151,8 +143,7 @@ class ChatScreen extends StatelessWidget {
             CircleAvatar(
               backgroundImage: profileImageUrl.isNotEmpty
                   ? NetworkImage(profileImageUrl)
-                  : const AssetImage('assets/images/default_profile_pic.jpg')
-                      as ImageProvider,
+                  : const AssetImage('assets/images/تنزيل.png') as ImageProvider,
               radius: 20,
             ),
             const SizedBox(width: 10),
@@ -191,7 +182,6 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: StreamBuilder<List<Message>>(
               stream: chatBloc.chatRepository.getMessages(chatId),
-              // استخدم chatId الصحيح
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

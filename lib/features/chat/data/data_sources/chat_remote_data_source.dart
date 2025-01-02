@@ -1,27 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../models/chat_user.dart';
-
 class ChatRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final currentUser = FirebaseAuth.instance.currentUser?.uid;
-
-  Future<List<UserChat>> fetchUsersByName(String name) async {
-    final snapshot = await FirebaseFirestore.instance
+  Stream<List<UserChat>> fetchUsersByName(String name) {
+    final lowerCaseName = name.toLowerCase();
+    return FirebaseFirestore.instance
         .collection('users')
-        .where('userName', isGreaterThanOrEqualTo: name)
-        .where('userName', isLessThanOrEqualTo: '$name\uf8ff')
-        .get();
-    return snapshot.docs.map((doc) {
-      final userData = doc.data();
-      return UserChat(
-        uid: doc.id,
-        userName: userData['userName'],
-        profileImageUrl: userData['profileImageUrl'],
-      );
-    }).toList();
+        .where('userNameLower', isGreaterThanOrEqualTo: lowerCaseName)
+        .where('userNameLower', isLessThanOrEqualTo: '$lowerCaseName\uf8ff')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final userData = doc.data();
+        return UserChat(
+          uid: doc.id,
+          userName: userData['userName'] ?? '',
+          profileImageUrl: userData['profileImageUrl'] ?? '',
+        );
+      }).toList();
+    });
   }
+
 
   Stream<List<Message>> getMessages(String chatId) {
     return _firestore
