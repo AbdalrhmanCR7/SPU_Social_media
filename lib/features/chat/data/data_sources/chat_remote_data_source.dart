@@ -96,15 +96,13 @@ class ChatRemoteDataSource {
           .collection('users')
           .doc(currentUser.uid)
           .get();
-      final String currentUserName =
-          currentUserDoc.data()?['userName'] ;
+      final String currentUserName = currentUserDoc.data()?['userName'];
 
       final receiverDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(receiverId)
           .get();
-      final String receiverName =
-          receiverDoc.data()?['userName'] ;
+      final String receiverName = receiverDoc.data()?['userName'];
 
       final chatRoom = await _firestore.collection('chats').add({
         'users': [currentUser.uid, receiverId],
@@ -117,11 +115,13 @@ class ChatRemoteDataSource {
     throw Exception('Current User is Null');
   }
 
-  // دالة لجلب الغرف بناءً على وجود chatId
   Stream<List<UserChatWithMessage>> viewUsers() {
     final currentUser = FirebaseAuth.instance.currentUser?.uid;
     if (currentUser != null) {
-      return _firestore.collection('chats').snapshots().asyncMap((snapshot) async {
+      return _firestore
+          .collection('chats')
+          .snapshots()
+          .asyncMap((snapshot) async {
         List<UserChatWithMessage> userChats = [];
         for (var doc in snapshot.docs) {
           final data = doc.data();
@@ -131,7 +131,8 @@ class ChatRemoteDataSource {
             final List users = data['users'] ?? [];
             if (users.isNotEmpty) {
               final userId = users.firstWhere((id) => id != currentUser);
-              final userDoc = await _firestore.collection('users').doc(userId).get();
+              final userDoc =
+                  await _firestore.collection('users').doc(userId).get();
               final userData = userDoc.data();
               if (userData != null) {
                 userChats.add(UserChatWithMessage(
@@ -145,7 +146,7 @@ class ChatRemoteDataSource {
             }
           }
         }
-        // ترتيب الغرف حسب أحدث وقت
+
         userChats.sort((a, b) => b.timestamp.compareTo(a.timestamp));
         return userChats;
       });
@@ -153,5 +154,4 @@ class ChatRemoteDataSource {
       throw Exception('Current User is Null');
     }
   }
-
 }
