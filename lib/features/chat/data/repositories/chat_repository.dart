@@ -1,7 +1,8 @@
 import 'package:social_media_app/features/chat/data/models/chat_user.dart';
 import '../data_sources/chat_remote_data_source.dart';
 
-  class UserRepository {
+
+class UserRepository {
   final ChatRemoteDataSource remoteDataSource;
 
   UserRepository(this.remoteDataSource);
@@ -45,4 +46,13 @@ import '../data_sources/chat_remote_data_source.dart';
       throw Exception('Error creating chat room: $e');
     }
   }
+
+  Stream<List<UserChatWithMessage>> fetchUsersWithLastMessage() {
+    try {
+      return remoteDataSource.viewUsers();
+    } catch (e) {
+      throw Exception('Error fetching users with message: $e');
+    }
+  }
 }
+

@@ -1,5 +1,4 @@
 import 'package:bloc/bloc.dart';
-
 import '../data/data_sources/chat_remote_data_source.dart';
 import '../data/models/chat_user.dart';
 import '../data/repositories/chat_repository.dart';
@@ -27,14 +26,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<FetchUsersEvent>((event, emit) async {
       emit(ChatLoading());
 
-        final userStream = await _userRepository.fetchUsersByName(event.name);
-        await for (final users in userStream) {
-          if (users.isNotEmpty) {
-            emit(ChatUsersLoaded(users: users));
-          } else {
-            emit(ChatError(error: 'No users found'));
-          }
+      final userStream = await _userRepository.fetchUsersByName(event.name);
+      await for (final users in userStream) {
+        if (users.isNotEmpty) {
+          emit(ChatUsersLoaded(users: users));
+        } else {
+          emit(ChatError(error: 'No users found'));
         }
+      }
     });
 
     on<FetchMessagesEvent>((event, emit) async {
@@ -51,7 +50,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           event.chatId, event.receiverId, event.message);
       emit(ChatMessagesSent());
 
-      add(FetchMessagesEvent(chatId: event.chatId));
+
+    });
+    on<ViewUsersEvent>((event, emit) async {
+      emit(ChatLoading());
+      final userStream = _userRepository.fetchUsersWithLastMessage();
+      await emit.forEach<List<UserChatWithMessage>>(
+        userStream,
+        onData: (users) => ViewUsersLoaded(users: users),
+        onError: (_, __) =>
+            ChatError(error: 'Error fetching users with last message'),
+      );
     });
   }
 }

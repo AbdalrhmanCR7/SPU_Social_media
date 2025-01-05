@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/chat_user.dart';
+
 class ChatRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   Stream<List<UserChat>> fetchUsersByName(String name) {
     final lowerCaseName = name.toLowerCase();
     return FirebaseFirestore.instance
@@ -22,7 +24,6 @@ class ChatRemoteDataSource {
     });
   }
 
-
   Stream<List<Message>> getMessages(String chatId) {
     return _firestore
         .collection('chats')
@@ -33,7 +34,6 @@ class ChatRemoteDataSource {
         .map((snapshot) {
       return snapshot.docs.reversed.map((doc) {
         final data = doc.data();
-
         return Message(
           senderId: data['senderId'] ?? '',
           receiverId: data['receiverId'] ?? '',
@@ -97,14 +97,14 @@ class ChatRemoteDataSource {
           .doc(currentUser.uid)
           .get();
       final String currentUserName =
-          currentUserDoc.data()?['userName'] ?? 'Unknown User';
+          currentUserDoc.data()?['userName'] ;
 
       final receiverDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(receiverId)
           .get();
       final String receiverName =
-          receiverDoc.data()?['userName'] ?? 'Unknown User';
+          receiverDoc.data()?['userName'] ;
 
       final chatRoom = await _firestore.collection('chats').add({
         'users': [currentUser.uid, receiverId],
@@ -116,4 +116,42 @@ class ChatRemoteDataSource {
     }
     throw Exception('Current User is Null');
   }
+
+  // دالة لجلب الغرف بناءً على وجود chatId
+  Stream<List<UserChatWithMessage>> viewUsers() {
+    final currentUser = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUser != null) {
+      return _firestore.collection('chats').snapshots().asyncMap((snapshot) async {
+        List<UserChatWithMessage> userChats = [];
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+
+          // الشرط: التحقق من وجود chatRoom.id فقط
+          if (doc.id.isNotEmpty) {
+            final List users = data['users'] ?? [];
+            if (users.isNotEmpty) {
+              final userId = users.firstWhere((id) => id != currentUser);
+              final userDoc = await _firestore.collection('users').doc(userId).get();
+              final userData = userDoc.data();
+              if (userData != null) {
+                userChats.add(UserChatWithMessage(
+                  uid: userId,
+                  userName: userData['userName'] ?? '',
+                  profileImageUrl: userData['profileImageUrl'] ?? '',
+                  lastMessage: data['lastMessage'] ?? '',
+                  timestamp: (data['timestamp'] as Timestamp).toDate(),
+                ));
+              }
+            }
+          }
+        }
+        // ترتيب الغرف حسب أحدث وقت
+        userChats.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        return userChats;
+      });
+    } else {
+      throw Exception('Current User is Null');
+    }
+  }
+
 }

@@ -2,7 +2,7 @@ abstract class ChatEvent {}
 
 class FetchUsersEvent extends ChatEvent {
   final String name;
-  FetchUsersEvent({ required this.name});
+  FetchUsersEvent({required this.name});
 }
 
 class FetchMessagesEvent extends ChatEvent {
@@ -26,3 +26,5 @@ class FetchChatRoomEvent extends ChatEvent {
   final String receiverId;
   FetchChatRoomEvent({required this.receiverId});
 }
+
+class ViewUsersEvent extends ChatEvent {}

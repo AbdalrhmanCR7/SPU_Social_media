@@ -2,13 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:intl/intl.dart';
 import '../../bloc/chat_bloc.dart';
 import '../../bloc/chat_event.dart';
 import '../../bloc/chat_state.dart';
 import '../../data/models/chat_user.dart';
 
-class ChatFeature extends StatelessWidget {
-  const ChatFeature({super.key});
+class ChatsPage extends StatefulWidget {
+  const ChatsPage({super.key});
+
+  @override
+  ChatsPageState createState() => ChatsPageState();
+}
+
+class ChatsPageState extends State<ChatsPage> {
+  bool isDataLoaded = false;
+
+  String formatTimestamp(DateTime timestamp) {
+    final dateFormat = DateFormat('H:mm dd/MM');
+    return dateFormat.format(timestamp);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final chatBloc = context.read<ChatBloc>();
+    if (!isDataLoaded) {
+      chatBloc.add(ViewUsersEvent());
+      isDataLoaded = true;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +40,106 @@ class ChatFeature extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        title: const Text('Chats'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchPage()),
+              ).then((_) {
+
+                setState(() {
+                  chatBloc.add(ViewUsersEvent());
+                });
+              });
+            },
+          ),
+        ],
+      ),
+      body: StreamBuilder<ChatState>(
+        stream: chatBloc.stream.where((state) => state is ViewUsersLoaded),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Error loading data'));
+          } else if (snapshot.hasData && snapshot.data is ViewUsersLoaded) {
+            final users = (snapshot.data as ViewUsersLoaded).users;
+
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: (user.profileImageUrl.isNotEmpty)
+                          ? NetworkImage(user.profileImageUrl)
+                          : const AssetImage('assets/images/تنزيل.png')
+                              as ImageProvider,
+                    ),
+                    title: Text(user.userName),
+                    subtitle: Text(
+                      user.lastMessage,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: Text(
+                      formatTimestamp(user.timestamp),
+                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                    onTap: () {
+                      if (user.uid.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ConversationPage(
+                              userName: user.userName,
+                              profileImageUrl: user.profileImageUrl,
+                              receiverId: user.uid,
+                              chatId: user.uid,
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Receiver ID is missing!')),
+                        );
+                      }
+                    },
+                  ),
+                );
+              },
+            );
+          } else {
+            return const Center(child: Text('No users found'));
+          }
+        },
+      ),
+    );
+  }
+}
+
+class SearchPage extends StatelessWidget {
+  SearchPage({super.key});
+
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  Widget build(BuildContext context) {
+    final chatBloc = context.read<ChatBloc>();
+
+    Future.delayed(Duration.zero, () => _focusNode.requestFocus());
+
+    return Scaffold(
+      appBar: AppBar(
         title: Card(
           child: TextField(
+            focusNode: _focusNode,
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
               hintText: 'Search...',
@@ -29,11 +151,10 @@ class ChatFeature extends StatelessWidget {
         ),
       ),
       body: StreamBuilder<ChatState>(
-        stream: chatBloc.stream.where((state) => state is ChatUsersLoaded || state is ChatError),
+        stream: chatBloc.stream
+            .where((state) => state is ChatUsersLoaded || state is ChatError),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.hasData && snapshot.data is ChatUsersLoaded) {
             final users = (snapshot.data as ChatUsersLoaded).users;
@@ -56,49 +177,26 @@ class ChatFeature extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundImage: (user.profileImageUrl.isNotEmpty)
                         ? NetworkImage(user.profileImageUrl)
-                        : const AssetImage('assets/images/تنزيل.png') as ImageProvider,
+                        : const AssetImage('assets/images/تنزيل.png')
+                            as ImageProvider,
                   ),
-
-
                   onTap: () {
                     if (user.uid.isNotEmpty) {
-                      chatBloc.add(FetchChatRoomEvent(receiverId: user.uid));
-
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => StreamBuilder<ChatState>(
-                            stream: chatBloc.stream.where((state) => state is ChatRoomLoaded),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
-                              } else if (snapshot.hasError) {
-                                return Center(child: Text('Error: ${snapshot.error}'));
-                              } else if (snapshot.hasData && snapshot.data is ChatRoomLoaded) {
-                                final chatRoomState = snapshot.data as ChatRoomLoaded;
-                                final chatRoomId = chatRoomState.chatRoomId;
-                                return ChatScreen(
-                                  userName: user.userName,
-                                  profileImageUrl: user.profileImageUrl,
-                                  receiverId: user.uid,
-                                  chatId: chatRoomId,
-                                );
-                              } else {
-                                return const Center(child: Text('No chat room found.'));
-                              }
-                            },
+                          builder: (context) => ConversationPage(
+                            userName: user.userName,
+                            profileImageUrl: user.profileImageUrl,
+                            receiverId: user.uid,
+                            chatId: user.uid,
                           ),
                         ),
-                      ).then((_) {
-                        final chatRoomState = chatBloc.state;
-                        if (chatRoomState is ChatRoomLoaded) {
-                          final chatRoomId = chatRoomState.chatRoomId;
-                          chatBloc.add(FetchMessagesEvent(chatId: chatRoomId));
-                        }
-                      });
+                      );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Receiver ID is missing!')),
+                        const SnackBar(
+                            content: Text('Receiver ID is missing!')),
                       );
                     }
                   },
@@ -106,7 +204,7 @@ class ChatFeature extends StatelessWidget {
               },
             );
           } else {
-            return const Center(child: Text('Please enter a name to search'));
+            return Container();
           }
         },
       ),
@@ -114,14 +212,13 @@ class ChatFeature extends StatelessWidget {
   }
 }
 
-
-class ChatScreen extends StatelessWidget {
+class ConversationPage extends StatelessWidget {
   final String userName;
   final String profileImageUrl;
   final String receiverId;
   final String chatId;
 
-  ChatScreen({
+  ConversationPage({
     super.key,
     required this.userName,
     required this.profileImageUrl,
@@ -143,7 +240,8 @@ class ChatScreen extends StatelessWidget {
             CircleAvatar(
               backgroundImage: profileImageUrl.isNotEmpty
                   ? NetworkImage(profileImageUrl)
-                  : const AssetImage('assets/images/تنزيل.png') as ImageProvider,
+                  : const AssetImage('assets/images/تنزيل.png')
+                      as ImageProvider,
               radius: 20,
             ),
             const SizedBox(width: 10),
@@ -158,10 +256,12 @@ class ChatScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.call),
+            color: Colors.deepPurpleAccent,
             onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.videocam),
+            color: Colors.deepPurpleAccent,
             onPressed: () {},
           ),
           PopupMenuButton<String>(
@@ -197,33 +297,25 @@ class ChatScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final message = messages[index];
 
-                      if ((message.senderId ==
-                                  FirebaseAuth.instance.currentUser?.uid ||
-                              message.receiverId ==
-                                  FirebaseAuth.instance.currentUser?.uid) &&
-                          message.message.isNotEmpty) {
-                        bool isCurrentUserMessage = message.senderId ==
-                            FirebaseAuth.instance.currentUser?.uid;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5.0, horizontal: 10.0),
-                          child: BubbleSpecialThree(
-                            text: message.message,
+                      bool isCurrentUserMessage = message.senderId ==
+                          FirebaseAuth.instance.currentUser?.uid;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 5.0, horizontal: 10.0),
+                        child: BubbleSpecialThree(
+                          text: message.message,
+                          color: isCurrentUserMessage
+                              ? Colors.blueAccent
+                              : Colors.grey.shade300,
+                          textStyle: TextStyle(
+                            fontSize: 18,
                             color: isCurrentUserMessage
-                                ? Colors.blueAccent
-                                : Colors.grey.shade300,
-                            textStyle: TextStyle(
-                              fontSize: 18,
-                              color: isCurrentUserMessage
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                            isSender: isCurrentUserMessage,
+                                ? Colors.white
+                                : Colors.black,
                           ),
-                        );
-                      } else {
-                        return Container();
-                      }
+                          isSender: isCurrentUserMessage,
+                        ),
+                      );
                     },
                   );
                 }
@@ -247,12 +339,19 @@ class ChatScreen extends StatelessWidget {
                   onPressed: () {},
                 ),
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    height: 40,
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Type your message...',
+                        hintStyle: const TextStyle(
+                          height: 1.8,
+                          fontSize: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
                   ),
@@ -262,11 +361,17 @@ class ChatScreen extends StatelessWidget {
                   onPressed: () {
                     if (_messageController.text.isNotEmpty) {
                       final messageText = _messageController.text;
-                      chatBloc.add(SendMessageEvent(
-                        chatId: chatId,
-                        receiverId: receiverId,
-                        message: messageText,
-                      ));
+                      if (chatId.isEmpty) {
+                        chatBloc.add(CreateChatRoomEvent(
+                          receiverId: receiverId,
+                        ));
+                      } else {
+                        chatBloc.add(SendMessageEvent(
+                          chatId: chatId,
+                          receiverId: receiverId,
+                          message: messageText,
+                        ));
+                      }
                       _messageController.clear();
                     }
                   },

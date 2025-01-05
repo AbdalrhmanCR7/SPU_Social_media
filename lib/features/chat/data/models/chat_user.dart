@@ -7,6 +7,7 @@ class UserChat {
     required this.uid,
     required this.userName,
     required this.profileImageUrl,
+
   });
 }
 
@@ -23,3 +24,25 @@ class Message {
     required this.timestamp,
   });
 }
+
+
+class UserChatWithMessage {
+  final String uid;
+  final String userName;
+  final String profileImageUrl;
+  final String lastMessage;
+  final DateTime timestamp;
+
+  UserChatWithMessage({
+    required this.uid,
+    required this.userName,
+    required this.profileImageUrl,
+    required this.lastMessage,
+    required this.timestamp,
+  });
+}
+
+
+
+
+
