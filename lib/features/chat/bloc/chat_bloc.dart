@@ -1,3 +1,4 @@
+
 import 'package:bloc/bloc.dart';
 import '../data/data_sources/chat_remote_data_source.dart';
 import '../data/models/chat_user.dart';
@@ -5,12 +6,13 @@ import '../data/repositories/chat_repository.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
 
+
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final UserRepository _userRepository;
 
   UserRepository get chatRepository => UserRepository(ChatRemoteDataSource());
-
   ChatBloc(this._userRepository) : super(ChatInitial()) {
+
     on<FetchChatRoomEvent>((event, emit) async {
       final chatRoomId = await _userRepository.getChatRoom(event.receiverId);
       if (chatRoomId != null) {
@@ -25,7 +27,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     on<FetchUsersEvent>((event, emit) async {
       emit(ChatLoading());
-
       final userStream = await _userRepository.fetchUsersByName(event.name);
       await for (final users in userStream) {
         if (users.isNotEmpty) {
@@ -62,5 +63,81 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             ChatError(error: 'Error fetching users with last message'),
       );
     });
-  }
-}
+
+
+    on<DeleteMessageEvent>((event, emit) async {
+
+        emit(ChatLoading());
+        await _userRepository.deleteMessage(event.chatId, event.messageId);
+        emit(ChatMessageDeleted());
+        add(FetchMessagesEvent(chatId: event.chatId));
+
+
+
+    });
+    on<UpdateMessageEvent>((event, emit) async {
+
+        emit(ChatLoading());
+        await _userRepository.updateMessage(
+          event.chatId,
+          event.messageId,
+          event.updatedMessage,
+        );
+        emit(MessageUpdatedState());
+
+    });
+  //
+  //   on<SendMediaEvent>((event, emit) async {
+  //     emit(ChatLoading());
+  //     await _userRepository.sendMedia(
+  //       event.chatId,
+  //       event.receiverId,
+  //       event.mediaUrl,
+  //       event.mediaType,
+  //     );
+  //     emit(ChatMessagesSent());
+  //     add(FetchMessagesEvent(chatId: event.chatId)); // تحديث الرسائل بعد الإرسال
+  //   });
+  //
+  //   on<UploadMediaEvent>((event, emit) async {
+  //     emit(MediaUploading());
+  //     final mediaUrl = await _userRepository.uploadMedia(event.file, event.folder);
+  //     emit(MediaUploaded());
+  //   });
+  //
+  //
+   }
+   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

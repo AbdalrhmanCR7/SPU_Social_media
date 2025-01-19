@@ -43,3 +43,10 @@ class ChatError extends ChatState {
 
   ChatError({required this.error});
 }
+class ChatMessageDeleted extends ChatState {}
+class MessageUpdatedState extends ChatState {}
+
+
+
+
+

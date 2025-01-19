@@ -1,29 +1,71 @@
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 import 'package:social_media_app/features/post/data/models/post_model.dart';
-
-
+import '../../../../core/entities/entity/file_entity.dart';
+import '../../../../core/entities/entity/x_file_entity.dart';
 
 abstract class PostRepo {
-  Future<List<Post>> fetchAllPosts();
+  Stream<List<Post>> fetchAllPosts();
 
-  Future<void> createPost(Post post);
+  Future<void> createPost(Post post, );
 
   Future<void> deletePost(String postId);
 
-  Future<List<Post>> fetchPostByUserId(String userId);
+  Stream<List<Post>> fetchPostByUserId(String userId);
+
+  Future<void> updatePost(Post post);
+
+  Future<List<FileEntities>> uploadFilesPost(
+      List<XFileEntities> files, String folderName);
+
+
 }
 
-
-  class NewPostsRemoteDataSource implements PostRepo {
+class NewPostsRemoteDataSource implements PostRepo {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseStorage storage = FirebaseStorage.instance;
   final CollectionReference postCollection =
-      FirebaseFirestore.instance.collection('posts');
+  FirebaseFirestore.instance.collection('posts');
+
 
   @override
   Future<void> createPost(Post post) async {
-    await postCollection.doc(post.id).set(post.toJson());
+
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("المستخدم غير مسجل الدخول");
+      }
+
+      String userId = currentUser.uid;
+
+      DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).get();
+      if (!userSnapshot.exists) {
+        throw Exception("بيانات المستخدم غير موجودة");
+      }
+
+      Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
+      String userName = userData['userName'] ?? "مستخدم غير معروف";
+      String profileImageUrl = userData['profileImageUrl'] ?? "";
+
+      final postId = (post.id.isNotEmpty) ? post.id : postCollection.doc().id;
+
+      final postData = {
+        ...post.toMap(),
+        'id': postId,
+        'userId': userId,
+        'userName': userName,
+        'profileImageUrl': profileImageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      await postCollection.doc(postId).set(postData);
+
   }
+
+
 
   @override
   Future<void> deletePost(String postId) async {
@@ -31,42 +73,71 @@ abstract class PostRepo {
   }
 
   @override
-  Future<List<Post>> fetchAllPosts() async {
-    final PostsSnapshot =
-        await postCollection.orderBy('timestamp', descending: true).get();
-    final List<Post> allPosts = PostsSnapshot.docs
-        .map((doc) => Post.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
-    return allPosts;
+  Stream<List<Post>> fetchAllPosts() {
+    return firestore
+        .collection('posts')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .where((doc) => doc.data().containsKey('createdAt')) // التأكد من وجود createdAt
+          .map((doc) => Post.fromMap(doc.data()))
+          .toList();
+    });
   }
 
   @override
-  Future<List<Post>> fetchPostByUserId(String userId) async {
-    final PostsSnapshot =
-        await postCollection.where('userId', isEqualTo: userId).get();
-    final userPosts = PostsSnapshot.docs
-        .map((doc) => Post.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
-    return userPosts;
+  Stream<List<Post>> fetchPostByUserId(String uid) async* {
+    // Fetch user data
+    DocumentSnapshot userSnapshot = await firestore.collection('users').doc(uid).get();
+
+    if (userSnapshot.exists) {
+      // Fetch posts based on userId
+      QuerySnapshot postSnapshot = await postCollection
+          .where('userId', isEqualTo: uid)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      // Stream the posts
+      yield postSnapshot.docs
+          .map((doc) => Post.fromMap(doc.data() as Map<String, dynamic>))
+          .toList();
+    }
   }
 
-// Future<FileEntities> uploadFile(
-//     XFileEntities xFileEntities,
-//     String folderName,
-//     ) async {
-//   final String path = "$folderName/${xFileEntities.name}";
-//   final Reference storageRef = _storage.ref(path);
-//   await storageRef.putData(xFileEntities.xFileAsBytes);
-//   final String fileUrl = await storageRef.getDownloadURL();
-//   final FileEntities fileEntities =
-//   FileEntities(name: xFileEntities.name, url: fileUrl);
-//   return fileEntities;
-// }
-//
-// Future<String> uploadImage(Uint8List imageBytes) async {
-//   final Reference storageRef = _storage.ref().child('posts').child(DateTime.now().millisecondsSinceEpoch.toString());
-//   final UploadTask uploadTask = storageRef.putData(imageBytes);
-//   final TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
-//   return await downloadUrl.ref.getDownloadURL();
-// }
+  @override
+  Future<void> updatePost(Post post) async {
+    await postCollection.doc(post.id).update(post.toMap());
+  }
+
+  @override
+  Future<List<FileEntities>> uploadFilesPost(
+      List<XFileEntities> files, String folderName) async {
+    final uploadTasks = files.map((file) async {
+      final String path = "$folderName/${file.name}";
+      final Reference storageRef = storage.ref(path);
+      await storageRef.putData(file.xFileAsBytes);
+      final String fileUrl = await storageRef.getDownloadURL();
+      return FileEntities(name: file.name, url: fileUrl);
+    }).toList();
+
+    return await Future.wait(uploadTasks);
+  }
+
+
+
+  Future<UserPost?> fetchUserPost(String uid) async {
+    final userDoc = await firestore.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      final userData = userDoc.data();
+      if (userData != null) {
+        return UserPost(
+          uid: uid,
+          userName: userData['userName'],
+          profileImageUrl: userData['profileImageUrl'],
+        );
+      }
+    }
+    return null;
+  }
 }

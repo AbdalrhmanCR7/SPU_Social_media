@@ -1,11 +1,12 @@
 import 'package:dartz/dartz.dart';
 import '../../../../app/data/data_source/app_local_data_source.dart';
+import '../../../../core/entities/entity/file_entity.dart';
+import '../../../../core/entities/entity/x_file_entity.dart';
 import '../../../../core/error/failures.dart';
 
 import '../data_sources/profile_remote_data_source.dart';
-import '../entities/entity/file_entity.dart';
-import '../entities/entity/x_file_entity.dart';
-import '../entities/profileUser.dart';
+
+import '../models/profileUser.dart';
 
 class ProfileRepository {
   final NewProfileRemoteDataSource remoteDataSource;

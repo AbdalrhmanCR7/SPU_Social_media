@@ -1,66 +1,68 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 
 class Post {
   final String id;
-  final String userId;
-  final String email;
-  final String userName;
+   final String userName;
   final String text;
-  final String imageUrl;
+  final List<String> imageUrls;
   final DateTime createdAt;
   final List<dynamic> likes;
   final List<dynamic> comments;
+  final String backgroundColor;
+
+   final String profileImageUrl;
 
   Post({
+      required this.profileImageUrl,
+    required this.backgroundColor,
     required this.id,
-    required this.userId,
-    required this.email,
     required this.userName,
     required this.text,
-    required this.imageUrl,
     required this.createdAt,
     this.likes = const [],
     this.comments = const [],
+    required this.imageUrls,
   });
 
-
-  Post copyWith({String? imageUrl}) {
-    return Post(id: id,
-      userId: userId,
-      email: email,
-      userName: userName,
-      text: text,
-      imageUrl: imageUrl?? this.imageUrl,
-      createdAt: createdAt,
-    );
-  }
-
-
-  factory Post.fromJson(Map<String, dynamic> json) {
-    return Post(
-      id: json['id'],
-      userId: json['userId'] ,
-      email: json['email'] ,
-      userName: json['userName'] ,
-      text: json['text'] ,
-      imageUrl: json['mediaUrl'] ,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      likes: List<dynamic>.from(json['likes'] ),
-      comments: List<dynamic>.from(json['comments'] ),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
-      'userId': userId,
-      'email': email,
+      'id': id,
       'userName': userName,
-      'content': text,
-      'imageUrl': imageUrl,
-      'createdAt': createdAt,
+     'profileImageUrl': profileImageUrl,
+      'text': text,
+      'imageUrls': imageUrls,
+      'createdAt': createdAt.toIso8601String(), // تحويل التاريخ إلى سلسلة نصية
       'likes': likes,
       'comments': comments,
+      'backgroundColor': backgroundColor,
     };
   }
+
+  factory Post.fromMap(Map<String, dynamic> map) {
+    return Post(
+      id: map['id'],
+      userName: map['userName'] ,
+      text: map['text'] as String,
+      imageUrls: List<String>.from(map['imageUrls']),
+        createdAt: (map['createdAt'] as Timestamp).toDate(),
+
+      likes: List<dynamic>.from(map['likes']),
+      comments: List<dynamic>.from(map['comments']),
+      backgroundColor: map['backgroundColor'] ,
+      profileImageUrl: map['profileImageUrl'],
+    );
+  }
+}
+
+class UserPost {
+  final String uid;
+  final String userName;
+  final String profileImageUrl;
+
+  UserPost({
+    required this.uid,
+    required this.userName,
+    required this.profileImageUrl,
+  });
 }

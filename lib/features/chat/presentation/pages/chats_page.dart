@@ -1,12 +1,16 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:chat_bubbles/chat_bubbles.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../bloc/chat_bloc.dart';
 import '../../bloc/chat_event.dart';
 import '../../bloc/chat_state.dart';
 import '../../data/models/chat_user.dart';
+import 'package:flutter/material.dart';
+
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
@@ -49,7 +53,6 @@ class ChatsPageState extends State<ChatsPage> {
                 context,
                 MaterialPageRoute(builder: (context) => SearchPage()),
               ).then((_) {
-
                 setState(() {
                   chatBloc.add(ViewUsersEvent());
                 });
@@ -79,7 +82,7 @@ class ChatsPageState extends State<ChatsPage> {
                     leading: CircleAvatar(
                       backgroundImage: (user.profileImageUrl.isNotEmpty)
                           ? NetworkImage(user.profileImageUrl)
-                          : const AssetImage('assets/images/تنزيل.png')
+                          : const AssetImage('assets/images/person.png')
                               as ImageProvider,
                     ),
                     title: Text(user.userName),
@@ -177,7 +180,7 @@ class SearchPage extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundImage: (user.profileImageUrl.isNotEmpty)
                         ? NetworkImage(user.profileImageUrl)
-                        : const AssetImage('assets/images/تنزيل.png')
+                        : const AssetImage('assets/images/person.png')
                             as ImageProvider,
                   ),
                   onTap: () {
@@ -227,6 +230,7 @@ class ConversationPage extends StatelessWidget {
   });
 
   final TextEditingController _messageController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -234,13 +238,22 @@ class ConversationPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.grey.shade300, Colors.grey.shade600],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             CircleAvatar(
               backgroundImage: profileImageUrl.isNotEmpty
                   ? NetworkImage(profileImageUrl)
-                  : const AssetImage('assets/images/تنزيل.png')
+                  : const AssetImage('assets/images/person.png')
                       as ImageProvider,
               radius: 20,
             ),
@@ -249,6 +262,11 @@ class ConversationPage extends StatelessWidget {
               child: Text(
                 userName,
                 overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.lato(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -256,21 +274,34 @@ class ConversationPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.call),
-            color: Colors.deepPurpleAccent,
+            color: Colors.white,
+            tooltip: 'إجراء مكالمة صوتية',
             onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.videocam),
-            color: Colors.deepPurpleAccent,
+            color: Colors.white,
+            tooltip: 'إجراء مكالمة فيديو',
             onPressed: () {},
           ),
           PopupMenuButton<String>(
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {},
             itemBuilder: (BuildContext context) {
               return {'إعدادات 1', 'إعدادات 2'}.map((String choice) {
                 return PopupMenuItem<String>(
                   value: choice,
-                  child: Text(choice),
+                  child: Text(
+                    choice,
+                    style: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 );
               }).toList();
             },
@@ -280,104 +311,283 @@ class ConversationPage extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: chatBloc.chatRepository.getMessages(chatId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
-                } else {
-                  final messages = snapshot.data!;
-                  return ListView.builder(
-                    reverse: true,
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
+            child: Container(
+              color: Colors.grey.shade300, // خلفية المحادثة بيضاء
+              child: StreamBuilder<List<Message>>(
+                stream: chatBloc.chatRepository.getMessages(chatId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('No messages yet.'));
+                  } else {
+                    final messages = snapshot.data!;
+                    return ListView.builder(
+                      reverse: true,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
 
-                      bool isCurrentUserMessage = message.senderId ==
-                          FirebaseAuth.instance.currentUser?.uid;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5.0, horizontal: 10.0),
-                        child: BubbleSpecialThree(
-                          text: message.message,
-                          color: isCurrentUserMessage
-                              ? Colors.blueAccent
-                              : Colors.grey.shade300,
-                          textStyle: TextStyle(
-                            fontSize: 18,
-                            color: isCurrentUserMessage
-                                ? Colors.white
-                                : Colors.black,
-                          ),
-                          isSender: isCurrentUserMessage,
-                        ),
-                      );
-                    },
-                  );
-                }
-              },
+                        if ((message.senderId == FirebaseAuth.instance.currentUser?.uid ||
+                            message.receiverId == FirebaseAuth.instance.currentUser?.uid) &&
+                            message.message.isNotEmpty) {
+                          bool isCurrentUserMessage =
+                              message.senderId == FirebaseAuth.instance.currentUser?.uid;
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 5.0, horizontal: 10.0),
+                            child: GestureDetector(
+                              onLongPress: () {
+                                if (isCurrentUserMessage) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Message Options'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ListTile(
+                                            leading: const Icon(Icons.edit),
+                                            title: const Text('Edit Message'),
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              showUpdateConfirmationDialog(
+                                                  context, chatBloc, message);
+                                            },
+                                          ),
+                                          ListTile(
+                                            leading: const Icon(Icons.delete),
+                                            title: const Text('Delete Message'),
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              showDeleteConfirmationDialog(
+                                                  context, chatBloc, message);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Row(
+                                mainAxisAlignment: isCurrentUserMessage
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Color(0xFFB0B0B0),
+                                            Color(0xFF808080)
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(10),
+                                      child: Text(
+                                        message.message,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: isCurrentUserMessage
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Container();
+                        }
+                      },
+                    );
+                  }
+                },
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.camera_alt),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.photo),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.mic),
-                  onPressed: () {},
-                ),
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        hintStyle: const TextStyle(
-                          height: 1.8,
-                          fontSize: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFB0B0B0), Color(0xFF808080)],
+                // تدرجات فضي ورمادي
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt),
+                    color: Colors.white,
+                    onPressed: () async {
+                      final XFile? file =
+                          await _picker.pickImage(source: ImageSource.camera);
+                      // if (file != null) {
+                      //   final File selectedFile = File(file.path);
+                      //   chatBloc.add(SendMediaMessageEvent(
+                      //     chatId: chatId,
+                      //     receiverId: receiverId,
+                      //     file: selectedFile,
+                      //   ));
+                      // }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.mic),
+                    color: Colors.white,
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.photo),
+                    color: Colors.white,
+                    onPressed: () async {
+                      final XFile? file = await _picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
+                      //
+                      // if (file != null) {
+                      //   final File selectedFile = File(file.path);
+                      //
+                      //   chatBloc.add(SendMediaMessageEvent(
+                      //     chatId: chatId,
+                      //     receiverId: receiverId,
+                      //     file: selectedFile,
+                      //   ));
+                      // }
+                    },
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: TextField(
+                        controller: _messageController,
+                        style: const TextStyle(color: Colors.black),
+                        cursorColor: Colors.black,
+                         textAlign: TextAlign.right,
+                        decoration: InputDecoration(
+                          hintText: 'Type your message...',
+                          hintStyle: const TextStyle(
+                            height: 1.8,
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () {
-                    if (_messageController.text.isNotEmpty) {
-                      final messageText = _messageController.text;
-                      if (chatId.isEmpty) {
-                        chatBloc.add(CreateChatRoomEvent(
-                          receiverId: receiverId,
-                        ));
-                      } else {
-                        chatBloc.add(SendMessageEvent(
-                          chatId: chatId,
-                          receiverId: receiverId,
-                          message: messageText,
-                        ));
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    color: Colors.white,
+                    onPressed: () {
+                      if (_messageController.text.isNotEmpty) {
+                        final messageText = _messageController.text;
+                        if (chatId.isEmpty) {
+                          chatBloc.add(CreateChatRoomEvent(
+                            receiverId: receiverId,
+                          ));
+                        } else {
+                          chatBloc.add(SendMessageEvent(
+                            chatId: chatId,
+                            receiverId: receiverId,
+                            message: messageText,
+                          ));
+                        }
+                        _messageController.clear();
                       }
-                      _messageController.clear();
-                    }
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showDeleteConfirmationDialog(
+      BuildContext context, ChatBloc chatBloc, Message message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Message'),
+        content: const Text('Are you sure you want to delete this message?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              chatBloc.add(DeleteMessageEvent(
+                  chatId: chatId, messageId: message.messageId));
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showUpdateConfirmationDialog(
+      BuildContext context, ChatBloc chatBloc, Message message) {
+    TextEditingController updateMessageController =
+        TextEditingController(text: message.message);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update Message'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: updateMessageController,
+              decoration: const InputDecoration(
+                hintText: 'Enter new message',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              chatBloc.add(UpdateMessageEvent(
+                chatId: chatId,
+                messageId: message.messageId,
+                updatedMessage: updateMessageController.text,
+              ));
+              Navigator.pop(context);
+            },
+            child: const Text('Update'),
           ),
         ],
       ),

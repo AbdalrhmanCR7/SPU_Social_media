@@ -34,10 +34,12 @@ class ChatRemoteDataSource {
         .map((snapshot) {
       return snapshot.docs.reversed.map((doc) {
         final data = doc.data();
+
         return Message(
           senderId: data['senderId'] ?? '',
           receiverId: data['receiverId'] ?? '',
           message: data['message'] ?? '',
+          messageId: data['messageId'] ?? '',
           timestamp: data['timestamp'] != null
               ? (data['timestamp'] as Timestamp).toDate()
               : DateTime.now(),
@@ -50,7 +52,7 @@ class ChatRemoteDataSource {
       String chatId, String receiverId, String message) async {
     final currentUser = FirebaseAuth.instance.currentUser?.uid;
     if (currentUser != null) {
-      await _firestore
+      final messageRef = await _firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
@@ -59,6 +61,10 @@ class ChatRemoteDataSource {
         'receiverId': receiverId,
         'message': message,
         'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      await messageRef.update({
+        'messageId': messageRef.id,
       });
       await _firestore.collection("chats").doc(chatId).set({
         'users': [currentUser, receiverId],
@@ -126,7 +132,6 @@ class ChatRemoteDataSource {
         for (var doc in snapshot.docs) {
           final data = doc.data();
 
-          // الشرط: التحقق من وجود chatRoom.id فقط
           if (doc.id.isNotEmpty) {
             final List users = data['users'] ?? [];
             if (users.isNotEmpty) {
@@ -152,6 +157,53 @@ class ChatRemoteDataSource {
       });
     } else {
       throw Exception('Current User is Null');
+    }
+  }
+
+  Future<void> deleteMessage(String chatId, String messageId) async {
+    try {
+      final messagesRef =
+          _firestore.collection('chats').doc(chatId).collection('messages');
+
+      await messagesRef.doc(messageId).delete();
+
+      final snapshot = await messagesRef
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+      final lastMessage =
+          snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
+
+      await _firestore.collection('chats').doc(chatId).update({
+        'lastMessage': lastMessage,
+      });
+    } catch (e) {
+      throw Exception('Failed to delete message: $e');
+    }
+  }
+
+  Future<void> updateMessage(
+      String chatId, String messageId, String updatedMessage) async {
+    try {
+      final messagesRef =
+          _firestore.collection('chats').doc(chatId).collection('messages');
+
+      await messagesRef.doc(messageId).update({
+        'message': updatedMessage,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      final snapshot = await messagesRef
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+      final lastMessage =
+          snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
+      await _firestore.collection('chats').doc(chatId).update({
+        'lastMessage': lastMessage,
+      });
+    } catch (e) {
+      throw Exception('Failed to update message: $e');
     }
   }
 }

@@ -1,308 +1,214 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../post/bloc/post_bloc.dart';
+import '../../../post/bloc/post_event.dart';
+import '../../../post/bloc/post_state.dart';
+import '../../../post/data/models/post_model.dart';
 
-class DisPlayPage extends StatelessWidget {
-  const DisPlayPage({super.key});
+class FeedScreen extends StatelessWidget {
+  const FeedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            const Card(
-              clipBehavior: Clip.antiAliasWithSaveLayer,
-              elevation: 5.0,
-              margin: EdgeInsets.all(
-                8.0,
-              ),
-              child: Stack(
-                alignment: AlignmentDirectional.bottomEnd,
-                children: [
-                  Image(
-                    image: NetworkImage(
-                      'https://image.freepik.com/free-photo/horizontal-shot-smiling-curly-haired-woman-indicates-free-space-demonstrates-place-your-advertisement-attracts-attention-sale-wears-green-turtleneck-isolated-vibrant-pink-wall_273609-42770.jpg',
-                    ),
-                    fit: BoxFit.cover,
-                    height: 200.0,
-                    width: double.infinity,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'communicate with friends',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) => buildPostItem(context),
-              separatorBuilder: (context, index) => const SizedBox(
-                height: 8.0,
-              ),
-              itemCount: 10,
-            ),
-            const SizedBox(
-              height: 8.0,
-            ),
-          ],
-        ),
+    context.read<PostBloc>().add(FetchAllPostsEvent());
+    return Scaffold(
+
+      body: BlocBuilder<PostBloc, PostState>(
+        builder: (context, state) {
+          if (state is PostLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is PostLoaded) {
+            final posts = state.posts;
+            if (posts.isEmpty) {
+              return const Center(child: Text('No posts available.'));
+            }
+            return ListView.builder(
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                final post = posts[index];
+                final hasImage = post.imageUrls.isNotEmpty;
+                return _buildPost(context, post, hasImage);
+              },
+            );
+          } else if (state is PostError) {
+            return Center(child: Text(state.message));
+          } else {
+            return const Center(child: Text('Something went wrong.'));
+          }
+        },
       ),
     );
   }
-  Widget buildPostItem(context) => Card(
-    clipBehavior: Clip.antiAliasWithSaveLayer,
-    elevation: 5.0,
-    margin: const EdgeInsets.symmetric(
-      horizontal: 8.0,
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(10.0),
-      child: Column(
-        children: [
-          Row(
+
+  Widget _buildPost(BuildContext context, Post post, bool hasImage) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header: صورة واسم المستخدم ووقت النشر
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
             children: [
-              const CircleAvatar(
-                radius: 25.0,
-                backgroundImage: NetworkImage(
-                  'https://image.freepik.com/free-photo/skeptical-woman-has-unsure-questioned-expression-points-fingers-sideways_273609-40770.jpg',
-                ),
+              CircleAvatar(
+                backgroundImage: NetworkImage(post.profileImageUrl),
+                radius: 20,
               ),
-              const SizedBox(
-                width: 15.0,
-              ),
-              const Expanded(
+              const SizedBox(width: 10),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Abdalrhman jamous',
-                          style: TextStyle(
-                            height: 1.4,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 5.0,
-                        ),
-                      ],
-                    ),
                     Text(
-                      'January 21, 2024 at 11:00 pm',
+                      post.userName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    const SizedBox(height: 2),
                   ],
                 ),
               ),
-              const SizedBox(
-                width: 15.0,
-              ),
               IconButton(
-                icon: const Icon(
-                  Icons.more_horiz,
-                  size: 16.0,
-                ),
+                icon: const Icon(Icons.more_vert),
                 onPressed: () {},
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 15.0,
-            ),
-            child: Container(
-              width: double.infinity,
-              height: 1.0,
-              color: Colors.grey[300],
-            ),
-          ),
-          Text(
-            'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
-            style: Theme.of(context).textTheme.subtitle1,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: 10.0,
-              top: 5.0,
-            ),
-            child: Container(
-              width: double.infinity,
-              child: Wrap(
-                children: [
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      end: 6.0,
-                    ),
-                    child: Container(
-                      height: 25.0,
-                      child: MaterialButton(
-                        onPressed: () {},
-                        minWidth: 1.0,
-                        padding: EdgeInsets.zero,
-                        child: const Text(
-                          '#software',
-                        ),
+        ),
+
+        // محتوى المنشور (صورة أو نص مع خلفية ملونة)
+        hasImage
+            ? Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // النص فوق الصورة (بسيط وبدون خلفية)
+            if (post.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Text(
+                  post.text,
+                  style: const TextStyle(
+                    fontSize: 18.0, // تكبير الخط
+                    color: Colors.black, // لون النص الأسود الافتراضي
+                    fontWeight: FontWeight.normal,
+                  ),
+                  textAlign: _isArabic(post.text)
+                      ? TextAlign.right
+                      : TextAlign.left, // المحاذاة حسب اللغة
+                  textDirection: _isArabic(post.text)
+                      ? TextDirection.rtl
+                      : TextDirection.ltr, // الاتجاه حسب اللغة
+                ),
+              ),
+            const SizedBox(height: 10), // مسافة صغيرة بين النص والصورة
+
+            // الصور
+            SizedBox(
+              height: 370,
+              child: PageView.builder(
+                itemCount: post.imageUrls.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15.0),
+                      image: DecorationImage(
+                        image: NetworkImage(post.imageUrls[index]),
+                        fit: BoxFit.cover,
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
+          ],
+        )
+            : Padding(
+          padding: const EdgeInsets.all(10),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Color(int.parse('0xFF${post.backgroundColor}')),
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              padding: const EdgeInsets.all(20.0),
+              child: Center(
+                child: Text(
+                  post.text,
+                  style: const TextStyle(
+                    fontSize: 24.0, // تكبير الخط للنصوص بدون صور
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
                   ),
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      end: 6.0,
-                    ),
-                    child: Container(
-                      height: 25.0,
-                      child: MaterialButton(
-                        onPressed: () {},
-                        minWidth: 1.0,
-                        padding: EdgeInsets.zero,
-                        child: const Text(
-                          '#flutter',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  textAlign: _isArabic(post.text)
+                      ? TextAlign.right
+                      : TextAlign.left, // المحاذاة حسب اللغة
+                  textDirection: _isArabic(post.text)
+                      ? TextDirection.rtl
+                      : TextDirection.ltr, // الاتجاه حسب اللغة
+                ),
               ),
             ),
           ),
-          Container(
-            height: 140.0,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                4.0,
-              ),
-              image: const DecorationImage(
-                image: NetworkImage(
-                  'https://image.freepik.com/free-photo/horizontal-shot-smiling-curly-haired-woman-indicates-free-space-demonstrates-place-your-advertisement-attracts-attention-sale-wears-green-turtleneck-isolated-vibrant-pink-wall_273609-42770.jpg',
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 5.0,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 5.0,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.favorite,
-                            size: 16.0,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(
-                            width: 5.0,
-                          ),
-                          Text(
-                            '120',
-                            style: Theme.of(context).textTheme.caption,
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 5.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          const Icon(
-                            Icons.chat,
-                            size: 16.0,
-                            color: Colors.amber,
-                          ),
-                          const SizedBox(
-                            width: 5.0,
-                          ),
-                          Text(
-                            '120 comments',
-                            style: Theme.of(context).textTheme.caption,
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: 10.0,
-            ),
-            child: Container(
-              width: double.infinity,
-              height: 1.0,
-              color: Colors.grey[300],
-            ),
-          ),
-          Row(
+        ),
+
+        // تفاعل المستخدم (الإعجاب، التعليق، المشاركة)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
             children: [
-              Expanded(
-                child: InkWell(
-                  child: const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18.0,
-                        backgroundImage: NetworkImage(
-                          'https://image.freepik.com/free-photo/skeptical-woman-has-unsure-questioned-expression-points-fingers-sideways_273609-40770.jpg',
-                        ),
-                      ),
-                      SizedBox(
-                        width: 15.0,
-                      ),
-                      Text(
-                        'Write a comment ...',
-                      ),
-                    ],
-                  ),
-                  onTap: () {},
-                ),
+              IconButton(
+                icon: Icon(Icons.favorite_border, color: Colors.red),
+                onPressed: () {},
               ),
-              InkWell(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.favorite_border,
-                      size: 16.0,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(
-                      width: 5.0,
-                    ),
-                    Text(
-                      'LOVE',
-                      style: Theme.of(context).textTheme.caption,
-                    ),
-                  ],
-                ),
-                onTap: () {},
+              IconButton(
+                icon: Icon(Icons.comment_outlined, color: Colors.orange),
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: Icon(Icons.share, color: Colors.blue),
+                onPressed: () {},
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.bookmark_border, color: Colors.purple),
+                onPressed: () {},
               ),
             ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+
+        // وقت النشر
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            _formatTimeAgo(post.createdAt),
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Divider(height: 1, color: Colors.grey[300]),
+      ],
+    );
+  }
+
+
+  bool _isArabic(String text) {
+    final arabicRegex = RegExp(r'[\u0600-\u06FF]');
+    return arabicRegex.hasMatch(text);
+  }
+
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final difference = DateTime.now().difference(dateTime);
+    if (difference.inSeconds < 60) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} hours ago';
+    } else {
+      return '${difference.inDays} days ago';
+    }
+  }
 }

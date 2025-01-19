@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 
-import '../entities/entity/file_entity.dart';
-import '../entities/entity/x_file_entity.dart';
-import '../entities/profileUser.dart';
+
+
+import '../../../../core/entities/entity/file_entity.dart';
+import '../../../../core/entities/entity/x_file_entity.dart';
+import '../models/profileUser.dart';
 
 abstract class ProfileRepo {
   Future<ProfileUser?> fetchUserProfile(String uid);

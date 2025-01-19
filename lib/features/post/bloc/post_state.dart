@@ -1,38 +1,77 @@
-part of 'post_bloc.dart';
+import 'package:equatable/equatable.dart';
+import '../../../core/entities/entity/file_entity.dart';
+import '../data/models/post_model.dart';
 
-enum BlocStatus {
-  initial,
-  loading,
-  error,
-  success,
-}
-
-class PostState extends Equatable {
-  final Uint8List? image;
-  final BlocStatus postStatus;
-
-  const PostState({
-    required this.image,
-    required this.postStatus,
-  });
-
-  factory PostState.initial() {
-    return const PostState(
-      image: null,
-      postStatus: BlocStatus.initial,
-    );
-  }
+abstract class PostState extends Equatable {
+  const PostState();
 
   @override
-  List<Object?> get props => [image,postStatus,];
+  List<Object?> get props => [];
+}
 
-  PostState copyWith({
-    Uint8List? image,
-    BlocStatus? postStatus,
-  }) {
-    return PostState(
-      image: image ?? this.image,
-      postStatus: postStatus ?? this.postStatus,
-    );
-  }
+class PostInitial extends PostState {}
+
+  class PostLoading extends PostState {}
+
+class PostLoaded extends PostState {
+  final List<Post> posts;
+
+  const PostLoaded(this.posts);
+
+  @override
+  List<Object?> get props => [posts];
+}
+
+class PostError extends PostState {
+  final String message;
+
+  const PostError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class PostFileUploaded extends PostState {
+  final FileEntities file;
+
+  const PostFileUploaded(this.file);
+
+  @override
+  List<Object?> get props => [file];
+}
+
+class PostFilesUploaded extends PostState {
+  final List<FileEntities> files;
+
+  const PostFilesUploaded(this.files);
+
+  @override
+  List<Object?> get props => [files];
+}
+
+class PostUpdated extends PostState {
+  final Post updatedPost;
+
+  const PostUpdated(this.updatedPost);
+
+  @override
+  List<Object?> get props => [updatedPost];
+}
+
+class PostCreated extends PostState {
+  final Post post;
+
+  const PostCreated(this.post);
+
+  @override
+  List<Object?> get props => [post];
+}
+
+final class UserPostLoadedState extends PostState {
+  final UserPost userPost;
+
+  const UserPostLoadedState({required this.userPost});
+
+  @override
+  List<Object?> get props => [userPost];
 }

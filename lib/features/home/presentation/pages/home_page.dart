@@ -5,6 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../chat/presentation/pages/chats_page.dart';
 import '../../../display/presentation/pages/display_page.dart';
 import '../../../notification/presentation/pages/navigation_page.dart';
+import '../../../post/bloc/post_bloc.dart';
+import '../../../post/data/data_sources/post_data_source.dart';
+import '../../../post/data/repositories/post_repository.dart';
 import '../../../post/presentation/pages/post_page.dart';
 import '../../../profile/bloc/profile_bloc.dart';
 import '../../../profile/bloc/profile_event.dart';
@@ -23,18 +26,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
 
-  // هنا يمكنك وضع رابط صورة المستخدم
-  // final String profileImageUrl =
-  //     'https://example.com/profile.jpg'; // استبدل برابط الصورة الفعلي
-
+  // قائمة الصفحات
   final List<Widget> screens = [
-    const DisPlayPage(),
+    BlocProvider(
+      create: (context) => PostBloc(PostRepository(NewPostsRemoteDataSource())),
+      child: FeedScreen(),
+    ),
     const NotificationPage(),
-    const AddPostPage(),
+    BlocProvider(
+      create: (context) => PostBloc(PostRepository(NewPostsRemoteDataSource())),
+      child: CreatePostPage(),
+    ),
     BlocProvider(
       create: (context) =>
-          ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
-            ..add(FetchUserProfile()),
+      ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
+        ..add(const FetchUserProfile()),
       child: const ProfilePage(),
     ),
   ];
@@ -48,6 +54,7 @@ class _HomePageState extends State<HomePage> {
 
   int currentIndex = 0;
 
+  // تعديل دالة navigationItems لتمرير الفقاعات مع التمرير
   List<Widget> navigationItems() {
     return [
       Icon(Icons.home_filled,
@@ -58,7 +65,6 @@ class _HomePageState extends State<HomePage> {
           color: currentIndex == 2 ? Colors.white : Colors.black),
       const CircleAvatar(
         radius: 15, // يمكنك تعديل الحجم
-        // backgroundImage: NetworkImage(profileImageUrl), // صورة الملف الشخصي
         backgroundColor: Colors.white, // خلفية بيضاء للصورة
       ),
     ];
@@ -75,7 +81,15 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: const Icon(Icons.exit_to_app),
                   onPressed: () {},
-                )
+                ),
+                // زر التبديل بين الوضع الفاتح والمظلم
+                // IconButton(
+                //   icon: const Icon(Icons.nightlight_round),
+                //   onPressed: () {
+                //     // إرسال حدث واحد فقط لتبديل الوضع
+                //     BlocProvider.of<DarkModeBloc>(context).add(ToggleDarkModeEvent());
+                //   },
+                // ),
               ],
             ),
           ],
@@ -83,30 +97,42 @@ class _HomePageState extends State<HomePage> {
       ),
       appBar: AppBar(
         title: Text(titles[currentIndex]),
-        actions: currentIndex == 0 // عرض الأزرار فقط في صفحة الهوم
+        actions: currentIndex == 0
             ? [
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SearchPagea()),
-                    );
-                  },
+          IconButton(
+            color: Colors.black,
+            iconSize: 27,
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SearchPagea()),
+              );
+            },
+          ),
+          IconButton(
+            color: Colors.black,
+            icon: const Icon(Icons.chat), // زر المحادثات
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ChatsPage(),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.chat), // زر المحادثات
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatsPage(),
-                      ),
-                    );
-                  },
-                ),
-              ]
-            : null, // لا تعرض أي أزرار إذا لم يكن في صفحة الهوم
+              );
+            },
+          ),
+        ]
+            : null,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.grey.shade300, Colors.grey.shade600],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: PageView(
         controller: _pageController,
@@ -120,9 +146,12 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: CurvedNavigationBar(
         items: navigationItems(),
         height: 55,
-        color: const Color(0xFFd5c48e),
-        backgroundColor: Colors.white,
-        buttonBackgroundColor: Colors.brown,
+        color: Colors.grey.shade400,
+        // نفس اللون الفاتح المستخدم في الـ AppBar
+        backgroundColor: Colors.transparent,
+        // خلفية شفافة لتجنب تداخل اللون مع الخلفية
+        buttonBackgroundColor: Colors.grey.shade600,
+        // نفس اللون الداكن المستخدم في الـ AppBar
         onTap: (index) {
           setState(() {
             currentIndex = index;
@@ -132,8 +161,8 @@ class _HomePageState extends State<HomePage> {
               curve: Curves.easeIn,
             );
           });
-        },
-      ),
+        },),
     );
   }
 }
+
