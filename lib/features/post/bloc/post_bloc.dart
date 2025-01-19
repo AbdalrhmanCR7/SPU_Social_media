@@ -120,7 +120,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
 
   @override
   Future<void> close() {
-    // إلغاء الاشتراك عند إغلاق الـ Bloc
+
     _allPostsSubscription?.cancel();
     _userPostsSubscription?.cancel();
     return super.close();

@@ -32,7 +32,7 @@ class Post {
      'profileImageUrl': profileImageUrl,
       'text': text,
       'imageUrls': imageUrls,
-      'createdAt': createdAt.toIso8601String(), // تحويل التاريخ إلى سلسلة نصية
+      'createdAt': createdAt.toIso8601String(),
       'likes': likes,
       'comments': comments,
       'backgroundColor': backgroundColor,
