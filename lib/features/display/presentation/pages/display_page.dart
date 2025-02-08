@@ -62,6 +62,7 @@
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+
                       Text(
                         post.userName,
                         style: const TextStyle(fontWeight: FontWeight.bold),
