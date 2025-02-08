@@ -48,10 +48,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     on<SendMessageEvent>((event, emit) async {
       await _userRepository.sendMessage(
-          event.chatId, event.receiverId, event.message);
+        event.chatId,
+        event.receiverId,
+        event.message,
+      );
       emit(ChatMessagesSent());
-
-
+      add(FetchMessagesEvent(chatId: event.chatId)); // تحديث الرسائل
     });
     on<ViewUsersEvent>((event, emit) async {
       emit(ChatLoading());

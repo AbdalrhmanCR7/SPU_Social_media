@@ -13,8 +13,9 @@ class TextPostPage extends StatefulWidget {
 }
 
 class _TextPostPageState extends State<TextPostPage> {
-  Color _selectedBackgroundColor = Colors.blue.shade100; // اللون الافتراضي
+  Color _selectedBackgroundColor = Colors.blue.shade100;
   final TextEditingController _textEditingController = TextEditingController();
+  bool _isPosting = false; // Added variable
 
   @override
   void dispose() {
@@ -37,7 +38,13 @@ class _TextPostPageState extends State<TextPostPage> {
                 content: Text('Post created successfully!'),
               ),
             );
-            Navigator.pop(context); // إرجاع المستخدم إلى الصفحة السابقة
+            setState(() => _isPosting = false); // Reset state
+            Navigator.pop(context);
+          } else if (state is PostError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+            setState(() => _isPosting = false); // Reset state
           }
         },
         child: SingleChildScrollView(
@@ -45,7 +52,6 @@ class _TextPostPageState extends State<TextPostPage> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                // User info card
                 BlocBuilder<PostBloc, PostState>(
                   builder: (context, state) {
                     if (state is UserPostLoadedState) {
@@ -59,8 +65,10 @@ class _TextPostPageState extends State<TextPostPage> {
                           child: Row(
                             children: [
                               CircleAvatar(
-                                radius: 25.0,
-                                backgroundImage: NetworkImage(state.userPost.profileImageUrl),
+                                backgroundImage: (state.userPost.profileImageUrl.isNotEmpty)
+                                    ? NetworkImage(state.userPost.profileImageUrl)
+                                    : const AssetImage('assets/images/person.png')
+                                as ImageProvider,
                               ),
                               const SizedBox(width: 15.0),
                               Expanded(
@@ -93,11 +101,10 @@ class _TextPostPageState extends State<TextPostPage> {
 
                 const SizedBox(height: 20.0),
 
-                // Caption input with colored background
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: _selectedBackgroundColor, // اللون المحدد
+                    color: _selectedBackgroundColor,
                     borderRadius: BorderRadius.circular(15.0),
                   ),
                   padding: const EdgeInsets.all(20.0),
@@ -107,17 +114,16 @@ class _TextPostPageState extends State<TextPostPage> {
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
                       textAlign: TextAlign.center,
-                      // النص متمركز
                       decoration: const InputDecoration(
                         hintText: 'Write something...',
                         hintStyle: TextStyle(
-                          fontSize: 24.0, // حجم النص الافتراضي
+                          fontSize: 24.0,
                           color: Colors.grey,
                         ),
                         border: InputBorder.none,
                       ),
                       style: const TextStyle(
-                        fontSize: 28.0, // حجم النص المدخل
+                        fontSize: 28.0,
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
@@ -127,7 +133,6 @@ class _TextPostPageState extends State<TextPostPage> {
 
                 const SizedBox(height: 20.0),
 
-                // Background selection circular scrollable
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -153,11 +158,9 @@ class _TextPostPageState extends State<TextPostPage> {
 
                 const SizedBox(height: 20.0),
 
-                // Action buttons (Cancel and Post)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Cancel button
                     Expanded(
                       child: Ink(
                         decoration: BoxDecoration(
@@ -191,7 +194,6 @@ class _TextPostPageState extends State<TextPostPage> {
 
                     const SizedBox(width: 20.0),
 
-                    // Post button
                     Expanded(
                       child: Ink(
                         decoration: BoxDecoration(
@@ -203,7 +205,9 @@ class _TextPostPageState extends State<TextPostPage> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: InkWell(
-                          onTap: () async {
+                          onTap: _isPosting // Disable when posting
+                              ? null
+                              : () async {
                             final text = _textEditingController.text;
                             final backgroundColor =
                             _selectedBackgroundColor.value.toRadixString(16);
@@ -217,16 +221,18 @@ class _TextPostPageState extends State<TextPostPage> {
                               backgroundColor: backgroundColor,
                               profileImageUrl: '',
                               userName: '',
-
                             );
 
+                            setState(() => _isPosting = true);
                             context.read<PostBloc>().add(CreatePostEvent(post));
                           },
                           child: Container(
                             constraints: const BoxConstraints(
                                 maxWidth: 200, maxHeight: 50),
                             alignment: Alignment.center,
-                            child: const Text(
+                            child: _isPosting
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text(
                               'Post',
                               style: TextStyle(
                                 color: Colors.white,
@@ -254,7 +260,7 @@ class _TextPostPageState extends State<TextPostPage> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedBackgroundColor = color; // تحديث لون الخلفية
+          _selectedBackgroundColor = color;
         });
       },
       child: Container(
@@ -263,7 +269,7 @@ class _TextPostPageState extends State<TextPostPage> {
         height: 50.0,
         decoration: BoxDecoration(
           color: color,
-          shape: BoxShape.circle, // الشكل دائري
+          shape: BoxShape.circle,
           border: Border.all(color: Colors.grey.shade400),
         ),
       ),

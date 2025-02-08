@@ -20,9 +20,10 @@ class SelectedImagesPage extends StatefulWidget {
 }
 
 class _SelectedImagesPageState extends State<SelectedImagesPage> {
-   late List<XFile> images;
+  late List<XFile> images;
   int currentIndex = 0;
   TextEditingController captionController = TextEditingController();
+  bool _isPosting = false; // Added variable
 
   @override
   void initState() {
@@ -66,9 +67,12 @@ class _SelectedImagesPageState extends State<SelectedImagesPage> {
                     return Row(
                       children: [
                         CircleAvatar(
-                          radius: 25.0,
-                          backgroundImage: NetworkImage(userPost.profileImageUrl),
+                          backgroundImage: (userPost.profileImageUrl.isNotEmpty)
+                              ? NetworkImage(userPost.profileImageUrl)
+                              : const AssetImage('assets/images/person.png')
+                          as ImageProvider,
                         ),
+
                         const SizedBox(width: 15.0),
                         Expanded(
                           child: Column(
@@ -208,7 +212,7 @@ class _SelectedImagesPageState extends State<SelectedImagesPage> {
                   const SizedBox(width: 20.0),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: _isPosting ? null : () async {
                         if (images.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -218,62 +222,66 @@ class _SelectedImagesPageState extends State<SelectedImagesPage> {
                           return;
                         }
 
-                        // تحويل الصور إلى كائنات XFileEntities
+                        setState(() => _isPosting = true);
+
                         final files = images.map((e) {
                           final bytes = File(e.path).readAsBytesSync();
                           return XFileEntities(name: e.name, xFileAsBytes: bytes);
                         }).toList();
 
-                        // رفع الصور باستخدام PostBloc
                         context.read<PostBloc>().add(
                           UploadFilesEvent(files: files, folderName: 'post_images'),
                         );
-
-                        // الاستماع لحالة رفع الملفات وإنشاء المنشور بعد نجاحها
-                        context.read<PostBloc>().stream.listen((state) {
-                          if (state is PostFilesUploaded) {
-                            final uploadedImagesUrls = state.files.map((file) => file.url).toList();
-
-                            // إنشاء المنشور باستخدام الروابط المرفوعة
-                            context.read<PostBloc>().add(
-                              CreatePostEvent(
-                                Post(
-                                  id: '',
-                                  userName: '',
-                                  text: captionController.text,
-                                  createdAt: DateTime.now(),
-                                  imageUrls: uploadedImagesUrls,
-                                  backgroundColor: '',
-                                  likes: [],
-                                  comments: [],
-                                  profileImageUrl: '',
-                                ),
-                              ),
-                            );
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Post created successfully!')),
-                            );
-
-                            Navigator.pop(context);
-                          } else if (state is PostError) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(state.message)),
-                            );
-                          }
-                        });
                       },
-
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                       ),
-                      child: const Text('Post'),
+                      child: _isPosting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Post'),
                     ),
                   ),
                 ],
               ),
 
               const SizedBox(height: 20.0),
+
+              BlocListener<PostBloc, PostState>(
+                listener: (context, state) {
+                  if (state is PostFilesUploaded) {
+                    final uploadedImagesUrls = state.files.map((file) => file.url).toList();
+
+                    context.read<PostBloc>().add(
+                      CreatePostEvent(
+                        Post(
+                          id: '',
+                          userName: '',
+                          text: captionController.text,
+                          createdAt: DateTime.now(),
+                          imageUrls: uploadedImagesUrls,
+                          backgroundColor: '',
+                          likes: [],
+                          comments: [],
+                          profileImageUrl: '',
+                        ),
+                      ),
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Post created successfully!')),
+                    );
+
+                    setState(() => _isPosting = false);
+                    Navigator.pop(context);
+                  } else if (state is PostError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(state.message)),
+                    );
+                    setState(() => _isPosting = false);
+                  }
+                },
+                child: const SizedBox.shrink(),
+              ),
 
               ElevatedButton(
                 onPressed: () async {
@@ -282,7 +290,7 @@ class _SelectedImagesPageState extends State<SelectedImagesPage> {
                   setState(() {
                     images.addAll(newImages);
                   });
-                                },
+                },
                 child: const Text('Add Photos'),
               ),
             ],

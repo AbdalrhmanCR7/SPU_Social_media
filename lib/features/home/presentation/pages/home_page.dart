@@ -11,6 +11,7 @@ import '../../../post/data/repositories/post_repository.dart';
 import '../../../post/presentation/pages/post_page.dart';
 import '../../../profile/bloc/profile_bloc.dart';
 import '../../../profile/bloc/profile_event.dart';
+import '../../../profile/bloc/profile_state.dart';
 import '../../../profile/data/data_sources/profile_remote_data_source.dart';
 import '../../../profile/data/repositories/profile_repository.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
@@ -26,16 +27,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
 
-  // قائمة الصفحات
   final List<Widget> screens = [
     BlocProvider(
       create: (context) => PostBloc(PostRepository(NewPostsRemoteDataSource())),
-      child: FeedScreen(),
+      child: const FeedScreen(),
     ),
     const NotificationPage(),
     BlocProvider(
       create: (context) => PostBloc(PostRepository(NewPostsRemoteDataSource())),
-      child: CreatePostPage(),
+      child: const CreatePostPage(),
     ),
     BlocProvider(
       create: (context) =>
@@ -54,18 +54,40 @@ class _HomePageState extends State<HomePage> {
 
   int currentIndex = 0;
 
-  // تعديل دالة navigationItems لتمرير الفقاعات مع التمرير
   List<Widget> navigationItems() {
     return [
-      Icon(Icons.home_filled,
-          color: currentIndex == 0 ? Colors.white : Colors.black),
-      Icon(Icons.notification_important,
-          color: currentIndex == 1 ? Colors.white : Colors.black),
-      Icon(Icons.post_add_outlined,
-          color: currentIndex == 2 ? Colors.white : Colors.black),
-      const CircleAvatar(
-        radius: 15, // يمكنك تعديل الحجم
-        backgroundColor: Colors.white, // خلفية بيضاء للصورة
+      Icon(
+        Icons.home_filled,
+        color: currentIndex == 0 ? Colors.white : Colors.black,
+      ),
+      Icon(
+        Icons.notification_important,
+        color: currentIndex == 1 ? Colors.white : Colors.black,
+      ),
+      Icon(
+        Icons.post_add_outlined,
+        color: currentIndex == 2 ? Colors.white : Colors.black,
+      ),
+      BlocProvider(
+        create: (context) => ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
+          ..add(const FetchUserProfile()),
+        child: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, state) {
+            if (state is LoadedState && state.profileUser.profileImageUrl != null) {
+              return CircleAvatar(
+                radius: 15,
+                backgroundImage: NetworkImage(state.profileUser.profileImageUrl!),
+                backgroundColor: Colors.white,
+              );
+            } else {
+              return CircleAvatar(
+                radius: 15,
+                backgroundImage: const AssetImage('assets/images/person.png') as ImageProvider,
+                backgroundColor: Colors.white,
+              );
+            }
+          },
+        ),
       ),
     ];
   }
@@ -73,7 +95,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: Drawer(
+      endDrawer: currentIndex == 3 // الشرط هنا
+          ? Drawer(
         child: ListView(
           children: [
             Column(
@@ -82,19 +105,12 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.exit_to_app),
                   onPressed: () {},
                 ),
-                // زر التبديل بين الوضع الفاتح والمظلم
-                // IconButton(
-                //   icon: const Icon(Icons.nightlight_round),
-                //   onPressed: () {
-                //     // إرسال حدث واحد فقط لتبديل الوضع
-                //     BlocProvider.of<DarkModeBloc>(context).add(ToggleDarkModeEvent());
-                //   },
-                // ),
               ],
             ),
           ],
         ),
-      ),
+      )
+          : null,
       appBar: AppBar(
         title: Text(titles[currentIndex]),
         actions: currentIndex == 0
@@ -112,7 +128,7 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             color: Colors.black,
-            icon: const Icon(Icons.chat), // زر المحادثات
+            icon: const Icon(Icons.chat),
             onPressed: () {
               Navigator.push(
                 context,
@@ -147,11 +163,8 @@ class _HomePageState extends State<HomePage> {
         items: navigationItems(),
         height: 55,
         color: Colors.grey.shade400,
-        // نفس اللون الفاتح المستخدم في الـ AppBar
         backgroundColor: Colors.transparent,
-        // خلفية شفافة لتجنب تداخل اللون مع الخلفية
         buttonBackgroundColor: Colors.grey.shade600,
-        // نفس اللون الداكن المستخدم في الـ AppBar
         onTap: (index) {
           setState(() {
             currentIndex = index;
@@ -161,8 +174,8 @@ class _HomePageState extends State<HomePage> {
               curve: Curves.easeIn,
             );
           });
-        },),
+        },
+      ),
     );
   }
 }
-

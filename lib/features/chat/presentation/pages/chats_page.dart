@@ -9,9 +9,6 @@ import '../../bloc/chat_bloc.dart';
 import '../../bloc/chat_event.dart';
 import '../../bloc/chat_state.dart';
 import '../../data/models/chat_user.dart';
-import 'package:flutter/material.dart';
-
-
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
 
@@ -96,22 +93,25 @@ class ChatsPageState extends State<ChatsPage> {
                     ),
                     onTap: () {
                       if (user.uid.isNotEmpty) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ConversationPage(
-                              userName: user.userName,
-                              profileImageUrl: user.profileImageUrl,
-                              receiverId: user.uid,
-                              chatId: user.uid,
-                            ),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Receiver ID is missing!')),
-                        );
+                        final chatBloc = context.read<ChatBloc>();
+                        chatBloc.add(FetchChatRoomEvent(receiverId: user.uid));
+
+                        // انتظر حتى يتم تحميل الـ chatId
+                        chatBloc.stream.where((state) => state is ChatRoomLoaded).first.then((state) {
+                          if (state is ChatRoomLoaded) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ConversationPage(
+                                  userName: user.userName,
+                                  profileImageUrl: user.profileImageUrl,
+                                  receiverId: user.uid,
+                                  chatId: state.chatRoomId, // استخدم الـ chatId الصحيح
+                                ),
+                              ),
+                            );
+                          }
+                        });
                       }
                     },
                   ),
@@ -504,17 +504,11 @@ class ConversationPage extends StatelessWidget {
                     onPressed: () {
                       if (_messageController.text.isNotEmpty) {
                         final messageText = _messageController.text;
-                        if (chatId.isEmpty) {
-                          chatBloc.add(CreateChatRoomEvent(
-                            receiverId: receiverId,
-                          ));
-                        } else {
-                          chatBloc.add(SendMessageEvent(
-                            chatId: chatId,
-                            receiverId: receiverId,
-                            message: messageText,
-                          ));
-                        }
+                        chatBloc.add(SendMessageEvent(
+                          chatId: chatId, // تأكد من استخدام الـ chatId الموجود
+                          receiverId: receiverId,
+                          message: messageText,
+                        ));
                         _messageController.clear();
                       }
                     },

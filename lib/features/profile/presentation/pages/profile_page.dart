@@ -76,6 +76,7 @@
                           } else {
                             return CircleAvatar(
                               radius: 50,
+                              backgroundImage: const AssetImage('assets/images/person.png') as ImageProvider, // هنا
                               backgroundColor: Colors.grey[300],
                             );
                           }
