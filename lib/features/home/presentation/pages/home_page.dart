@@ -37,12 +37,7 @@ class _HomePageState extends State<HomePage> {
       create: (context) => PostBloc(PostRepository(NewPostsRemoteDataSource())),
       child: const CreatePostPage(),
     ),
-    BlocProvider(
-      create: (context) =>
-      ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
-        ..add(const FetchUserProfile()),
-      child: const ProfilePage(),
-    ),
+    ProfilePage(),
   ];
 
   final List<String> titles = [
@@ -69,20 +64,24 @@ class _HomePageState extends State<HomePage> {
         color: currentIndex == 2 ? Colors.white : Colors.black,
       ),
       BlocProvider(
-        create: (context) => ProfileBloc(ProfileRepository(NewProfileRemoteDataSource()))
-          ..add(const FetchUserProfile()),
+        create: (context) =>
+            ProfileBloc(ProfileRepository(ProfileRemoteDataSourceImpl()))
+              ..add(const FetchUserProfile()),
         child: BlocBuilder<ProfileBloc, ProfileState>(
           builder: (context, state) {
-            if (state is LoadedState && state.profileUser.profileImageUrl != null) {
+            if (state is LoadedState &&
+                state.profileUser.profileImageUrl != null) {
               return CircleAvatar(
                 radius: 15,
-                backgroundImage: NetworkImage(state.profileUser.profileImageUrl!),
+                backgroundImage:
+                    NetworkImage(state.profileUser.profileImageUrl!),
                 backgroundColor: Colors.white,
               );
             } else {
               return CircleAvatar(
                 radius: 15,
-                backgroundImage: const AssetImage('assets/images/person.png') as ImageProvider,
+                backgroundImage: const AssetImage('assets/images/person.png')
+                    as ImageProvider,
                 backgroundColor: Colors.white,
               );
             }
@@ -95,50 +94,49 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: currentIndex == 3 // الشرط هنا
+      endDrawer: currentIndex == 3
           ? Drawer(
-        child: ListView(
-          children: [
-            Column(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.exit_to_app),
-                  onPressed: () {},
+              child: SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: IconButton(
+                    icon: const Icon(Icons.exit_to_app),
+                    onPressed: () {
+                      context.read< ProfileBloc>().add(Logout());
+                    },
+                  ),
                 ),
-              ],
-            ),
-          ],
-        ),
-      )
+              ),
+            )
           : null,
       appBar: AppBar(
         title: Text(titles[currentIndex]),
         actions: currentIndex == 0
             ? [
-          IconButton(
-            color: Colors.black,
-            iconSize: 27,
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SearchPagea()),
-              );
-            },
-          ),
-          IconButton(
-            color: Colors.black,
-            icon: const Icon(Icons.chat),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ChatsPage(),
+                IconButton(
+                  color: Colors.black,
+                  iconSize: 27,
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPagea()),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ]
+                IconButton(
+                  color: Colors.black,
+                  icon: const Icon(Icons.chat),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChatsPage(),
+                      ),
+                    );
+                  },
+                ),
+              ]
             : null,
         flexibleSpace: Container(
           decoration: BoxDecoration(

@@ -12,39 +12,54 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       emit(ProfileLoadingState());
       final result = await _profileRepository.fetchUserProfile();
       await result.fold(
-            (failure) async => emit(ProfileErrorState(errorMessage: failure.errorMessage)),
-            (data) async => emit(LoadedState(profileUser: data!)),
+        (failure) async =>
+            emit(ProfileErrorState(errorMessage: failure.errorMessage)),
+        (data) async => emit(LoadedState(profileUser: data!)),
       );
     });
 
     on<UpdateUserProfile>((event, emit) async {
       emit(ProfileLoadingState());
-      final result = await _profileRepository.updateProfile(event.updatedProfile);
+      final result =
+          await _profileRepository.updateProfile(event.updatedProfile);
       await result.fold(
-            (failure) async => emit(ProfileErrorState(errorMessage: failure.errorMessage)),
-            (_) async => emit(LoadedState(profileUser: event.updatedProfile)),
+        (failure) async =>
+            emit(ProfileErrorState(errorMessage: failure.errorMessage)),
+        (_) async => emit(LoadedState(profileUser: event.updatedProfile)),
       );
     });
 
     on<UploadFileEvent>((event, emit) async {
       emit(ProfileLoadingState());
-      final result = await _profileRepository.uploadFile(event.xFileEntities, event.folderName);
+      final result = await _profileRepository.uploadFile(
+          event.xFileEntities, event.folderName);
       await result.fold(
-            (failure) async => emit(ProfileErrorState(errorMessage: failure.errorMessage)),
-            (fileEntities) async {
+        (failure) async =>
+            emit(ProfileErrorState(errorMessage: failure.errorMessage)),
+        (fileEntities) async {
           final updatedProfile = (state as LoadedState).profileUser.copyWith(
-            newProfileImageUrl: fileEntities.url,
-          );
-          final updateResult = await _profileRepository.updateProfile(updatedProfile);
+                newProfileImageUrl: fileEntities.url,
+              );
+          final updateResult =
+              await _profileRepository.updateProfile(updatedProfile);
           await updateResult.fold(
-                (failure) async => emit(ProfileErrorState(errorMessage: failure.errorMessage)),
-                (_) async {
+            (failure) async =>
+                emit(ProfileErrorState(errorMessage: failure.errorMessage)),
+            (_) async {
               emit(LoadedState(profileUser: updatedProfile));
               add(const FetchUserProfile());
             },
           );
         },
       );
+    });
+
+    on<Logout>((event, emit) async {
+      emit(LogoutIsLoading());
+      final result = await _profileRepository.logout();
+      result.fold((failure) {}, (_) {
+        emit(LogoutIsDone());
+      });
     });
   }
 }

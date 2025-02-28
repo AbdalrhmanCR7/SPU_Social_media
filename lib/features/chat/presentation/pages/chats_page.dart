@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -74,13 +73,13 @@ class ChatsPageState extends State<ChatsPage> {
                 final user = users[index];
                 return Card(
                   margin:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundImage: (user.profileImageUrl.isNotEmpty)
                           ? NetworkImage(user.profileImageUrl)
                           : const AssetImage('assets/images/person.png')
-                              as ImageProvider,
+                      as ImageProvider,
                     ),
                     title: Text(user.userName),
                     subtitle: Text(
@@ -181,7 +180,7 @@ class SearchPage extends StatelessWidget {
                     backgroundImage: (user.profileImageUrl.isNotEmpty)
                         ? NetworkImage(user.profileImageUrl)
                         : const AssetImage('assets/images/person.png')
-                            as ImageProvider,
+                    as ImageProvider,
                   ),
                   onTap: () {
                     if (user.uid.isNotEmpty) {
@@ -254,7 +253,7 @@ class ConversationPage extends StatelessWidget {
               backgroundImage: profileImageUrl.isNotEmpty
                   ? NetworkImage(profileImageUrl)
                   : const AssetImage('assets/images/person.png')
-                      as ImageProvider,
+              as ImageProvider,
               radius: 20,
             ),
             const SizedBox(width: 10),
@@ -327,6 +326,7 @@ class ConversationPage extends StatelessWidget {
                     return ListView.builder(
                       reverse: true,
                       itemCount: messages.length,
+                      itemExtent: 60,
                       itemBuilder: (context, index) {
                         final message = messages[index];
 
@@ -434,7 +434,7 @@ class ConversationPage extends StatelessWidget {
                     color: Colors.white,
                     onPressed: () async {
                       final XFile? file =
-                          await _picker.pickImage(source: ImageSource.camera);
+                      await _picker.pickImage(source: ImageSource.camera);
                       // if (file != null) {
                       //   final File selectedFile = File(file.path);
                       //   chatBloc.add(SendMediaMessageEvent(
@@ -476,7 +476,7 @@ class ConversationPage extends StatelessWidget {
                         controller: _messageController,
                         style: const TextStyle(color: Colors.black),
                         cursorColor: Colors.black,
-                         textAlign: TextAlign.right,
+                        textAlign: TextAlign.right,
                         decoration: InputDecoration(
                           hintText: 'Type your message...',
                           hintStyle: const TextStyle(
@@ -550,7 +550,7 @@ class ConversationPage extends StatelessWidget {
   void showUpdateConfirmationDialog(
       BuildContext context, ChatBloc chatBloc, Message message) {
     TextEditingController updateMessageController =
-        TextEditingController(text: message.message);
+    TextEditingController(text: message.message);
 
     showDialog(
       context: context,

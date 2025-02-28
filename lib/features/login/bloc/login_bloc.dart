@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../data/repositories/login_repository.dart';
@@ -17,7 +16,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   LoginBloc() : super(LoginInitial()) {
     on<Login>((event, emit) async {
-      emit(LoadingState()); // تغيير الحالة إلى حالة تحميل
+      emit(LoadingState());
       final result = await loginRepository.login(
           email: emailController.text, password: passwordController.text);
       result.fold((failure) {

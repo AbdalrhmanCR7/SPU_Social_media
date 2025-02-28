@@ -1,5 +1,5 @@
-
 import 'package:bloc/bloc.dart';
+import 'package:flutter/cupertino.dart';
 import '../data/data_sources/chat_remote_data_source.dart';
 import '../data/models/chat_user.dart';
 import '../data/repositories/chat_repository.dart';
@@ -19,7 +19,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         emit(ChatRoomLoaded(chatRoomId: chatRoomId));
       } else {
         final newChatRoomId =
-            await _userRepository.createChatRoom(event.receiverId);
+        await _userRepository.createChatRoom(event.receiverId);
         emit(ChatRoomCreated(chatRoomId: newChatRoomId));
         emit(ChatRoomLoaded(chatRoomId: newChatRoomId));
       }
@@ -58,6 +58,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ViewUsersEvent>((event, emit) async {
       emit(ChatLoading());
       final userStream = _userRepository.fetchUsersWithLastMessage();
+      debugPrint('==>${userStream.first.toString()}');
       await emit.forEach<List<UserChatWithMessage>>(
         userStream,
         onData: (users) => ViewUsersLoaded(users: users),
@@ -69,77 +70,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     on<DeleteMessageEvent>((event, emit) async {
 
-        emit(ChatLoading());
-        await _userRepository.deleteMessage(event.chatId, event.messageId);
-        emit(ChatMessageDeleted());
-        add(FetchMessagesEvent(chatId: event.chatId));
+      emit(ChatLoading());
+      await _userRepository.deleteMessage(event.chatId, event.messageId);
+      emit(ChatMessageDeleted());
+      add(FetchMessagesEvent(chatId: event.chatId));
 
 
 
     });
     on<UpdateMessageEvent>((event, emit) async {
 
-        emit(ChatLoading());
-        await _userRepository.updateMessage(
-          event.chatId,
-          event.messageId,
-          event.updatedMessage,
-        );
-        emit(MessageUpdatedState());
+      emit(ChatLoading());
+      await _userRepository.updateMessage(
+        event.chatId,
+        event.messageId,
+        event.updatedMessage,
+      );
+      emit(MessageUpdatedState());
 
     });
-  //
-  //   on<SendMediaEvent>((event, emit) async {
-  //     emit(ChatLoading());
-  //     await _userRepository.sendMedia(
-  //       event.chatId,
-  //       event.receiverId,
-  //       event.mediaUrl,
-  //       event.mediaType,
-  //     );
-  //     emit(ChatMessagesSent());
-  //     add(FetchMessagesEvent(chatId: event.chatId)); // تحديث الرسائل بعد الإرسال
-  //   });
-  //
-  //   on<UploadMediaEvent>((event, emit) async {
-  //     emit(MediaUploading());
-  //     final mediaUrl = await _userRepository.uploadMedia(event.file, event.folder);
-  //     emit(MediaUploaded());
-  //   });
-  //
-  //
-   }
-   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    //
+  }
+}

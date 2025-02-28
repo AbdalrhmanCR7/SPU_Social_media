@@ -57,3 +57,13 @@ final class ImageSelectedState extends ProfileState {
   @override
   List<Object?> get props => [xFileEntities];
 }
+
+final class LogoutIsLoading extends ProfileState {
+  @override
+  List<Object?> get props => [];
+}
+final class LogoutIsDone extends ProfileState {
+  @override
+  List<Object?> get props => [];
+}
+

@@ -26,7 +26,3 @@ final class SuccessState extends LoginState {
 List<Object?> get props => [];
 }
 
-final class UserState extends LoginState {
-@override
-List<Object?> get props => [];
-}

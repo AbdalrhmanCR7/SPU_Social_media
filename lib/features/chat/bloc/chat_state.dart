@@ -31,7 +31,7 @@ class ChatRoomLoaded extends ChatState {
 
   ChatRoomLoaded({required this.chatRoomId});
 }
-
+class ViewUsersLoading extends ChatState {}
 class ViewUsersLoaded extends ChatState {
   final List<UserChatWithMessage> users;
 
@@ -45,8 +45,6 @@ class ChatError extends ChatState {
 }
 class ChatMessageDeleted extends ChatState {}
 class MessageUpdatedState extends ChatState {}
-
-
 
 
 

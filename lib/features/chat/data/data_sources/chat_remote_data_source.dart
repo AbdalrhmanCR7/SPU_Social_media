@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/rendering.dart';
 import '../models/chat_user.dart';
 
 class ChatRemoteDataSource {
@@ -48,8 +49,8 @@ class ChatRemoteDataSource {
     });
   }
 
-  Future<void> sendMessage(
-      String chatId, String receiverId, String message) async {
+  Future<void> sendMessage(String chatId, String receiverId,
+      String message) async {
     final currentUser = FirebaseAuth.instance.currentUser?.uid;
     if (currentUser != null) {
       final messageRef = await _firestore
@@ -126,6 +127,7 @@ class ChatRemoteDataSource {
     if (currentUser != null) {
       return _firestore
           .collection('chats')
+          .where('users', arrayContains: currentUser)
           .snapshots()
           .asyncMap((snapshot) async {
         List<UserChatWithMessage> userChats = [];
@@ -137,7 +139,7 @@ class ChatRemoteDataSource {
             if (users.isNotEmpty) {
               final userId = users.firstWhere((id) => id != currentUser);
               final userDoc =
-                  await _firestore.collection('users').doc(userId).get();
+              await _firestore.collection('users').doc(userId).get();
               final userData = userDoc.data();
               if (userData != null) {
                 userChats.add(UserChatWithMessage(
@@ -160,10 +162,11 @@ class ChatRemoteDataSource {
     }
   }
 
+
   Future<void> deleteMessage(String chatId, String messageId) async {
     try {
       final messagesRef =
-          _firestore.collection('chats').doc(chatId).collection('messages');
+      _firestore.collection('chats').doc(chatId).collection('messages');
 
       await messagesRef.doc(messageId).delete();
 
@@ -172,7 +175,7 @@ class ChatRemoteDataSource {
           .limit(1)
           .get();
       final lastMessage =
-          snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
+      snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
 
       await _firestore.collection('chats').doc(chatId).update({
         'lastMessage': lastMessage,
@@ -182,11 +185,11 @@ class ChatRemoteDataSource {
     }
   }
 
-  Future<void> updateMessage(
-      String chatId, String messageId, String updatedMessage) async {
+  Future<void> updateMessage(String chatId, String messageId,
+      String updatedMessage) async {
     try {
       final messagesRef =
-          _firestore.collection('chats').doc(chatId).collection('messages');
+      _firestore.collection('chats').doc(chatId).collection('messages');
 
       await messagesRef.doc(messageId).update({
         'message': updatedMessage,
@@ -198,7 +201,7 @@ class ChatRemoteDataSource {
           .limit(1)
           .get();
       final lastMessage =
-          snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
+      snapshot.docs.isNotEmpty ? snapshot.docs.first.data()['message'] : '';
       await _firestore.collection('chats').doc(chatId).update({
         'lastMessage': lastMessage,
       });

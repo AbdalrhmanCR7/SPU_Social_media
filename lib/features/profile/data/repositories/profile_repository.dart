@@ -9,7 +9,7 @@ import '../data_sources/profile_remote_data_source.dart';
 import '../models/profileUser.dart';
 
 class ProfileRepository {
-  final NewProfileRemoteDataSource remoteDataSource;
+  final ProfileRemoteDataSource remoteDataSource;
 
   ProfileRepository(this.remoteDataSource);
 
@@ -60,6 +60,16 @@ class ProfileRepository {
       return Right(xFileEntities);
     } catch (e) {
       return const Left(ServerFailure(errorMessage: 'Failed to select image'));
+    }
+  }
+  Future<Either<Failure, void>> logout() async {
+    try {
+      await remoteDataSource.logout();
+      await _appLocalDataSource.setUserLoggedInStatus(false);
+      await _appLocalDataSource.setUserId('');
+      return Right(null);
+    } catch (e) {
+      return const Left(ServerFailure(errorMessage: 'Something went wrong'));
     }
   }
 }

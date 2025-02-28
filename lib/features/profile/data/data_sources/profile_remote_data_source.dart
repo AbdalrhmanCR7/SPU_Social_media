@@ -1,26 +1,30 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-
-
-
 
 import '../../../../core/entities/entity/file_entity.dart';
 import '../../../../core/entities/entity/x_file_entity.dart';
 import '../models/profileUser.dart';
 
-abstract class ProfileRepo {
+abstract class ProfileRemoteDataSource {
   Future<ProfileUser?> fetchUserProfile(String uid);
 
   Future<void> updateProfile(ProfileUser updatedProfile);
 
+  Future<void> logout();
+
+  Future<XFileEntities?> selectImage();
+
+  Future<FileEntities> uploadFile(
+      XFileEntities xFileEntities, String folderName);
 }
 
-class NewProfileRemoteDataSource implements ProfileRepo {
+class ProfileRemoteDataSourceImpl extends ProfileRemoteDataSource {
   final FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
   final FirebaseStorage firebaseStorageStorage = FirebaseStorage.instance;
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   @override
   Future<ProfileUser?> fetchUserProfile(String uid) async {
@@ -35,12 +39,13 @@ class NewProfileRemoteDataSource implements ProfileRepo {
           email: userData['email'],
           date: userData['date'],
           bio: userData['bio'],
-          profileImageUrl:userData['profileImageUrl'],
+          profileImageUrl: userData['profileImageUrl'],
         );
       }
     }
     return null;
   }
+
   @override
   Future<void> updateProfile(ProfileUser updatedProfile) async {
     await firebaseFirestore.collection('users').doc(updatedProfile.uid).update({
@@ -49,19 +54,21 @@ class NewProfileRemoteDataSource implements ProfileRepo {
     });
   }
 
+  @override
   Future<FileEntities> uploadFile(
-      XFileEntities xFileEntities,
-      String folderName,
-      ) async {
+    XFileEntities xFileEntities,
+    String folderName,
+  ) async {
     final String path = "$folderName/${xFileEntities.name}";
     final Reference storageRef = firebaseStorageStorage.ref(path);
     await storageRef.putData(xFileEntities.xFileAsBytes);
     final String fileUrl = await storageRef.getDownloadURL();
     final FileEntities fileEntities =
-    FileEntities(name: xFileEntities.name, url: fileUrl);
+        FileEntities(name: xFileEntities.name, url: fileUrl);
     return fileEntities;
   }
 
+  @override
   Future<XFileEntities?> selectImage() async {
     final ImagePicker picker = ImagePicker();
     XFile? imagePicked = await picker.pickImage(source: ImageSource.gallery);
@@ -69,11 +76,14 @@ class NewProfileRemoteDataSource implements ProfileRepo {
       Uint8List selected = await imagePicked.readAsBytes();
       String selectedName = imagePicked.name;
       final XFileEntities xFileEntities =
-      XFileEntities(name: selectedName, xFileAsBytes: selected);
+          XFileEntities(name: selectedName, xFileAsBytes: selected);
       return xFileEntities;
     }
     return null;
   }
 
-
+  @override
+  Future<void> logout() async {
+    await _firebaseAuth.signOut();
+  }
 }

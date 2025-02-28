@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -10,7 +9,7 @@ import '../../../../core/entities/entity/x_file_entity.dart';
 abstract class PostRepo {
   Stream<List<Post>> fetchAllPosts();
 
-  Future<void> createPost(Post post, );
+  Future<void> createPost(Post post);
 
   Future<void> deletePost(String postId);
 
@@ -20,52 +19,46 @@ abstract class PostRepo {
 
   Future<List<FileEntities>> uploadFilesPost(
       List<XFileEntities> files, String folderName);
-
-
 }
 
-class NewPostsRemoteDataSource implements PostRepo {
+class NewPostsRemoteDataSource extends PostRepo {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final FirebaseStorage storage = FirebaseStorage.instance;
   final CollectionReference postCollection =
-  FirebaseFirestore.instance.collection('posts');
-
+      FirebaseFirestore.instance.collection('posts');
 
   @override
   Future<void> createPost(Post post) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception("المستخدم غير مسجل الدخول");
+    }
 
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception("المستخدم غير مسجل الدخول");
-      }
+    String userId = currentUser.uid;
 
-      String userId = currentUser.uid;
+    DocumentSnapshot userSnapshot =
+        await firestore.collection('users').doc(userId).get();
+    if (!userSnapshot.exists) {
+      throw Exception("بيانات المستخدم غير موجودة");
+    }
 
-      DocumentSnapshot userSnapshot = await firestore.collection('users').doc(userId).get();
-      if (!userSnapshot.exists) {
-        throw Exception("بيانات المستخدم غير موجودة");
-      }
+    Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
+    String userName = userData['userName'] ?? "مستخدم غير معروف";
+    String profileImageUrl = userData['profileImageUrl'] ?? "";
 
-      Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
-      String userName = userData['userName'] ?? "مستخدم غير معروف";
-      String profileImageUrl = userData['profileImageUrl'] ?? "";
+    final postId = (post.id.isNotEmpty) ? post.id : postCollection.doc().id;
 
-      final postId = (post.id.isNotEmpty) ? post.id : postCollection.doc().id;
+    final postData = {
+      ...post.toMap(),
+      'id': postId,
+      'userId': userId,
+      'userName': userName,
+      'profileImageUrl': profileImageUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+    };
 
-      final postData = {
-        ...post.toMap(),
-        'id': postId,
-        'userId': userId,
-        'userName': userName,
-        'profileImageUrl': profileImageUrl,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      await postCollection.doc(postId).set(postData);
-
+    await postCollection.doc(postId).set(postData);
   }
-
-
 
   @override
   Future<void> deletePost(String postId) async {
@@ -80,21 +73,23 @@ class NewPostsRemoteDataSource implements PostRepo {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .where((doc) => doc.data().containsKey('createdAt')) // التأكد من وجود createdAt
+          .where((doc) =>
+              doc.data().containsKey('createdAt')) // التأكد من وجود createdAt
           .map((doc) => Post.fromMap(doc.data()))
           .toList();
     });
   }
 
   @override
-  Stream<List<Post>> fetchPostByUserId(String uid) async* {
+  Stream<List<Post>> fetchPostByUserId(String userId) async* {
     // Fetch user data
-    DocumentSnapshot userSnapshot = await firestore.collection('users').doc(uid).get();
+    DocumentSnapshot userSnapshot =
+        await firestore.collection('users').doc(userId).get();
 
     if (userSnapshot.exists) {
       // Fetch posts based on userId
       QuerySnapshot postSnapshot = await postCollection
-          .where('userId', isEqualTo: uid)
+          .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
@@ -123,8 +118,6 @@ class NewPostsRemoteDataSource implements PostRepo {
 
     return await Future.wait(uploadTasks);
   }
-
-
 
   Future<UserPost?> fetchUserPost(String uid) async {
     final userDoc = await firestore.collection('users').doc(uid).get();
